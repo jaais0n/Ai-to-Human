@@ -84,11 +84,7 @@ export default function LandingPage() {
                   <ArrowRight className="w-4 h-4" />
                 </motion.button>
               </Link>
-              <Link to="/settings">
-                <button className="flex items-center gap-2 px-6 py-4 rounded-2xl font-medium text-slate-400 hover:text-white glass-card border border-white/8 hover:border-white/15 transition-all">
-                  Add API Key
-                </button>
-              </Link>
+
             </div>
           </motion.div>
 
@@ -144,7 +140,7 @@ export default function LandingPage() {
         >
           <div className="flex items-center gap-2 mb-6">
             <Star className="w-5 h-5 text-yellow-400" />
-            <h2 className="font-bold text-white text-lg">What HumanizeAI Does</h2>
+            <h2 className="font-bold text-white text-lg">What ai2human Does</h2>
           </div>
           <div className="grid sm:grid-cols-2 gap-3">
             {[

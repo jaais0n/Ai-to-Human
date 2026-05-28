@@ -62,7 +62,7 @@ export default function SettingsPage() {
           className="mb-8"
         >
           <h1 className="text-2xl font-bold text-white mb-2">Settings</h1>
-          <p className="text-sm text-slate-400">Configure your API key, preferences, and defaults.</p>
+          <p className="text-sm text-slate-400">Configure your preferences and writing defaults.</p>
         </motion.div>
 
         <div className="space-y-5">

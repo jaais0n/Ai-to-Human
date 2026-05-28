@@ -13,7 +13,7 @@ export default function Navbar() {
             <Pen className="w-3.5 h-3.5 text-black" />
           </div>
           <span className="font-semibold text-[15px] tracking-tight text-white">
-            Writer
+            ai2human
           </span>
         </Link>
 
