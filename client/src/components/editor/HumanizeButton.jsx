@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import { Wand2, Loader2 } from 'lucide-react';
+import { PenTool, Loader2 } from 'lucide-react';
 import useAppStore from '../../store/useAppStore';
 import { useHumanize } from '../../hooks/useHumanize';
 import { useKeyboardShortcuts } from '../../hooks/useKeyboardShortcuts';
@@ -27,16 +27,16 @@ export default function HumanizeButton() {
         whileHover={{ scale: isDisabled ? 1 : 1.03 }}
         whileTap={{ scale: isDisabled ? 1 : 0.97 }}
         className={`btn-primary flex items-center gap-2.5 px-7 py-3.5 text-sm ${
-          isDisabled ? '' : 'shadow-[0_0_20px_rgba(255,255,255,0.08)]'
+          isDisabled ? '' : ''
         }`}
         aria-label="Humanize content"
       >
         {isLoading ? (
           <Loader2 className="w-4 h-4 animate-spin" />
         ) : (
-          <Wand2 className="w-4 h-4" />
+          <PenTool className="w-4 h-4" />
         )}
-        <span>{isLoading ? 'Processing...' : 'Humanize'}</span>
+        <span>{isLoading ? 'Processing...' : 'Rewrite'}</span>
       </motion.button>
 
       <p className="text-[11px] text-neutral-700">

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Copy, Download, CheckCheck, Wand2 } from 'lucide-react';
+import { Copy, Download, CheckCheck, FileText } from 'lucide-react';
 import useAppStore from '../../store/useAppStore';
 import { useTypingEffect } from '../../hooks/useTypingEffect';
 import { useWordCount } from '../../hooks/useWordCount';
@@ -100,7 +100,7 @@ export default function OutputPanel() {
               className="h-full flex flex-col items-center justify-center gap-3 text-center"
             >
               <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center">
-                <Wand2 className="w-4 h-4 text-neutral-600" />
+                <FileText className="w-4 h-4 text-neutral-600" />
               </div>
               <p className="text-sm text-neutral-600">
                 Output will appear here

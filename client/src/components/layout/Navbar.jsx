@@ -18,7 +18,6 @@ export default function Navbar() {
         </Link>
 
         <div className="flex items-center gap-3">
-          <span className="text-xs text-neutral-500 hidden sm:block">Personal Tool</span>
         </div>
       </div>
     </nav>
