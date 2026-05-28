@@ -5,6 +5,7 @@ server/node_modules/
 
 # Production build outputs
 client/dist/
+dist/
 
 # Local env files
 .env
