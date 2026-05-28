@@ -212,13 +212,45 @@ function aggressiveHeuristics(text, creativity = 50, complexity = 50, tone = '')
       punctuation = '';
     }
 
+    // E) Merge short consecutive sentences to create run-ons (high perplexity)
+    const mergeProb = 0.4 * (1 - (complexity / 100)) * (cRatio + 0.5);
+    if (sentence.length < 60 && i + 2 < sentences.length && sentences[i + 2].length < 60 && Math.random() < mergeProb) {
+       let nextSentence = sentences[i+2].trim();
+       let nextPunctuation = sentences[i+3] || '.';
+       if (nextSentence) {
+         sentence = sentence + ", and " + nextSentence.charAt(0).toLowerCase() + nextSentence.slice(1);
+         punctuation = nextPunctuation;
+         i += 2; // Skip the merged sentence
+       }
+    }
+    
+    // F) Fragment creation (drop conjunctions)
+    if (sentence.length > 20 && Math.random() < 0.2 * cRatio) {
+      sentence = sentence.replace(/^(But|And|So|Because|Or)\s+/i, '');
+    }
+
     if (sentence.endsWith(punctuation)) punctuation = '';
 
     finalSentences.push(sentence + punctuation);
   }
 
+  // 6. Final Cleanups (Fixes double spaces and excessive punctuation)
   let finalString = finalSentences.join(' ');
   
+  if (creativity > 60) {
+    const BRITISH_SPELLINGS = {
+      'color': 'colour', 'flavor': 'flavour', 'humor': 'humour',
+      'labor': 'labour', 'neighbor': 'neighbour', 'analyze': 'analyse',
+      'apologize': 'apologise', 'recognize': 'recognise', 'realize': 'realise',
+      'organize': 'organise', 'traveler': 'traveller', 'defense': 'defence',
+      'license': 'licence', 'center': 'centre', 'meter': 'metre'
+    };
+    Object.keys(BRITISH_SPELLINGS).forEach(us => {
+      const regex = new RegExp(`\\b${us}\\b`, 'gi');
+      finalString = finalString.replace(regex, BRITISH_SPELLINGS[us]);
+    });
+  }
+
   // Clean up excessive periods (more than 3 into exactly 3)
   finalString = finalString.replace(/\.{4,}/g, '...');
   
