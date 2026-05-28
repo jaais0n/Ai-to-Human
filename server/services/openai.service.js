@@ -1,5 +1,5 @@
-const { translate } = require('@vitalets/google-translate-api');
 const nlp = require('compromise');
+const { translate } = require('@vitalets/google-translate-api');
 
 // ============================================================
 // ULTIMATE 0% AI BYPASS ENGINE (100% Free, NO API KEY)
@@ -71,19 +71,6 @@ const WORD_REPLACEMENTS = {
   'tapestry': 'mix',
   'bustling': 'busy'
 };
-
-async function translationChain(text, languages) {
-  let currentText = text;
-  for (const lang of languages) {
-    try {
-      const res = await translate(currentText, { to: lang });
-      currentText = res.text;
-    } catch (err) {
-      console.error(`Translation step to ${lang} failed:`, err.message);
-    }
-  }
-  return currentText;
-}
 
 function aggressiveHeuristics(text, creativity = 50, complexity = 50, tone = '') {
   let doc = nlp(text);
@@ -239,6 +226,17 @@ function aggressiveHeuristics(text, creativity = 50, complexity = 50, tone = '')
   finalString = finalString.replace(/\s{2,}/g, ' ');
 
   return finalString.trim();
+async function translationChain(text, languages) {
+  let currentText = text;
+  for (const lang of languages) {
+    try {
+      const res = await translate(currentText, { to: lang });
+      currentText = res.text;
+    } catch (err) {
+      console.error(`Translation step to ${lang} failed:`, err.message);
+    }
+  }
+  return currentText;
 }
 
 async function humanizeText({
@@ -253,11 +251,12 @@ async function humanizeText({
   
   const blocks = text.split(/\n/);
   
-  let chain = ['nl', 'fi', 'sw', 'en'];
+  // Use languages with extremely different grammar structures to maximize perplexity (drop AI score)
+  let chain = ['is', 'sw', 'en']; // Icelandic, Swahili
   if (strength > 70) {
-    chain = ['zh-CN', 'so', 'la', 'fr', 'en']; // Extreme perplexity
+    chain = ['ko', 'haw', 'cy', 'en']; // Korean, Hawaiian, Welsh (Extreme perplexity)
   } else if (strength < 40) {
-    chain = ['es', 'en']; // lower strength = fewer translation hops
+    chain = ['es', 'en'];
   }
 
   try {
@@ -280,10 +279,11 @@ async function humanizeText({
         continue;
       }
       
+      // Step 1: Run through translation chain to break AI sentence patterns natively
       let translated = await translationChain(content, chain);
       if (!translated || translated.trim() === '') translated = content;
       
-      // Pass the advanced controls to the heuristics engine
+      // Step 2: Apply aggressive heuristics to clean up and inject burstiness
       const humanized = aggressiveHeuristics(translated, creativity, complexity, tone);
       
       processedBlocks.push(prefix + humanized);
