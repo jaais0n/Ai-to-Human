@@ -1,4 +1,5 @@
 require('dotenv').config();
+process.env.XDG_CONFIG_HOME = '/tmp/.config/';
 const express = require('express');
 const cors = require('cors');
 
