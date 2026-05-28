@@ -40,7 +40,7 @@ export default function LandingPage() {
       />
 
       {/* Subtle grid background */}
-      <div className="absolute inset-0 z-0 opacity-[0.03] dark:opacity-20 pointer-events-none" 
+      <div className="absolute inset-0 z-0 opacity-15 dark:opacity-20 pointer-events-none text-neutral-900 dark:text-white" 
            style={{ backgroundImage: 'radial-gradient(circle at center, currentColor 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
       <div className="relative z-10 pt-32 pb-24 px-6 md:px-12 flex flex-col items-center">
