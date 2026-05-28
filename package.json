@@ -1,0 +1,15 @@
+{
+  "name": "humanize-ai",
+  "version": "1.0.0",
+  "description": "AI Humanizer — Premium SaaS Web App",
+  "private": true,
+  "scripts": {
+    "dev:client": "cd client && npm run dev",
+    "dev:server": "cd server && node index.js",
+    "dev": "npx concurrently \"npm run dev:client\" \"npm run dev:server\"",
+    "install:all": "cd client && npm install && cd ../server && npm install"
+  },
+  "devDependencies": {
+    "concurrently": "^8.2.2"
+  }
+}

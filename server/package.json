@@ -1,0 +1,21 @@
+{
+  "name": "humanize-ai-server",
+  "version": "1.0.0",
+  "description": "AI Humanizer backend API",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js",
+    "dev": "node index.js"
+  },
+  "dependencies": {
+    "@google/genai": "^2.6.0",
+    "@vitalets/google-translate-api": "^9.2.1",
+    "compromise": "^14.15.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.0",
+    "express": "^4.18.0",
+    "g4f": "^1.4.6",
+    "multer": "1.4.4",
+    "openai": "^4.0.0"
+  }
+}
