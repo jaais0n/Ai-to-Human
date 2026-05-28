@@ -223,7 +223,11 @@ input[type='range'] {
   height: 4px;
   border-radius: 2px;
   outline: none;
-  cursor: pointer;
+}
+
+/* Brutalist / Minimalist Overrides */
+* {
+  border-radius: 0 !important;
 }
 
 input[type='range']::-webkit-slider-thumb {

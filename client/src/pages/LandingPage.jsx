@@ -31,6 +31,14 @@ const features = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-black selection:bg-black/20 dark:selection:bg-white/20 selection:text-black dark:selection:text-white">
+      {/* Flash animation on load */}
+      <motion.div
+        initial={{ opacity: 1 }}
+        animate={{ opacity: 0 }}
+        transition={{ duration: 0.8, ease: 'easeOut' }}
+        className="fixed inset-0 z-[100] pointer-events-none bg-neutral-900 dark:bg-white"
+      />
+
       {/* Subtle grid background */}
       <div className="absolute inset-0 z-0 opacity-[0.03] dark:opacity-20 pointer-events-none" 
            style={{ backgroundImage: 'radial-gradient(circle at center, currentColor 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
