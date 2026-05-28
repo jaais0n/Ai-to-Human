@@ -117,10 +117,10 @@ function aggressiveHeuristics(text, creativity = 50, complexity = 50, tone = '')
   
   // Calculate probabilities based on creativity and complexity
   const cRatio = creativity / 100;
-  const chopProb = 0.3 * (1 - (complexity / 100)) * (cRatio + 0.5); // Lowered
-  const quirkProb = 0.1 * cRatio; // Lowered from 0.3
-  const starterProb = 0.1 * cRatio; // Lowered from 0.25
-  const questionProb = 0.1 * cRatio;
+  const chopProb = 0.4 * (1 - (complexity / 100)) * (cRatio + 0.5); 
+  const quirkProb = 0.15 * cRatio; 
+  const starterProb = 0.2 * cRatio; 
+  const questionProb = 0.15 * cRatio;
   
   for (let i = 0; i < sentences.length; i += 2) {
     let sentence = sentences[i].trim();
@@ -128,7 +128,6 @@ function aggressiveHeuristics(text, creativity = 50, complexity = 50, tone = '')
     
     if (!sentence) continue;
 
-    // Tone injection (prepend tone-specific starters to first sentence or randomly)
     if (tone && i === 0 && Math.random() < 0.8) {
        const lowerTone = tone.toLowerCase();
        if (lowerTone.includes('friendly') || lowerTone.includes('casual')) {
@@ -138,7 +137,6 @@ function aggressiveHeuristics(text, creativity = 50, complexity = 50, tone = '')
        }
     }
 
-    // A) Chop medium sentences randomly on conjunctions
     if (sentence.length > 40 && Math.random() < chopProb) {
       const parts = sentence.split(/\b(and|but|so|because|or)\b/i);
       if (parts.length >= 3) {
@@ -149,7 +147,6 @@ function aggressiveHeuristics(text, creativity = 50, complexity = 50, tone = '')
       }
     }
     
-    // B) Inject structural quirks (em-dashes and parentheses)
     if (sentence.length > 60 && Math.random() < quirkProb) {
       const words = sentence.split(' ');
       const mid = Math.floor(words.length / 2);
@@ -158,21 +155,18 @@ function aggressiveHeuristics(text, creativity = 50, complexity = 50, tone = '')
       sentence = words.join(' ').replace(/\s+/g, ' ');
     }
 
-    // C) Add casual starters randomly
     if (Math.random() < starterProb && sentence.length > 15 && complexity < 60) {
-      const starters = ["Look. ", "Honestly, ", "Think about it. ", "And here's the thing... ", "Basically, ", "Right. ", "See, "];
+      const starters = ["Look. ", "Honestly, ", "Think about it. ", "And here's the thing... ", "Basically, ", "Right. ", "See, ", "To be fair, "];
       const starter = starters[Math.floor(Math.random() * starters.length)];
       sentence = starter + sentence.charAt(0).toLowerCase() + sentence.slice(1);
     }
 
-    // D) Turn some statements into rhetorical questions
     if (Math.random() < questionProb && sentence.length > 30 && !sentence.endsWith('?')) {
       sentence = sentence.replace(/[.!]+$/, '');
       sentence = "And " + sentence.charAt(0).toLowerCase() + sentence.slice(1) + ", right?";
       punctuation = '';
     }
 
-    // Ensure we don't accidentally double-punctuate
     if (sentence.endsWith(punctuation)) punctuation = '';
 
     finalSentences.push(sentence + punctuation);
@@ -180,38 +174,13 @@ function aggressiveHeuristics(text, creativity = 50, complexity = 50, tone = '')
 
   let finalString = finalSentences.join(' ');
   
-  // 5. Cyrillic Homoglyph Injection (The UNDETECTABLE Bypass)
-  const HOMOGLYPHS = {
-    'a': 'а', 'c': 'с', 'e': 'е', 'o': 'о',
-    'p': 'р', 'x': 'х', 'y': 'у'
-  };
-
-  const homoProb = 0.4 * cRatio; // Higher creativity = more homoglyphs
-
-  let words = finalString.split(' ');
-  for (let w = 0; w < words.length; w++) {
-    if (words[w].length > 3 && Math.random() < homoProb) {
-      let charArray = words[w].split('');
-      for (let c = 0; c < charArray.length; c++) {
-        if (HOMOGLYPHS[charArray[c]] && Math.random() < 0.5) {
-          charArray[c] = HOMOGLYPHS[charArray[c]];
-          break; 
-        }
-      }
-      words[w] = charArray.join('');
-    }
-  }
-
-  // 6. Final Cleanups (Fixes double spaces and excessive punctuation)
-  let homoglyphText = words.join(' ');
-  
   // Clean up excessive periods (more than 3 into exactly 3)
-  homoglyphText = homoglyphText.replace(/\.{4,}/g, '...');
+  finalString = finalString.replace(/\.{4,}/g, '...');
   
   // Clean up double spaces caused by slicing
-  homoglyphText = homoglyphText.replace(/\s{2,}/g, ' ');
+  finalString = finalString.replace(/\s{2,}/g, ' ');
 
-  return homoglyphText.trim();
+  return finalString.trim();
 }
 
 async function humanizeText({
@@ -226,9 +195,9 @@ async function humanizeText({
   
   const blocks = text.split(/\n/);
   
-  let chain = ['ja', 'de', 'es', 'en'];
+  let chain = ['nl', 'fi', 'sw', 'en'];
   if (strength > 70) {
-    chain = ['zh-CN', 'ru', 'ar', 'fr', 'en'];
+    chain = ['zh-CN', 'so', 'la', 'fr', 'en']; // Extreme perplexity
   } else if (strength < 40) {
     chain = ['es', 'en']; // lower strength = fewer translation hops
   }
@@ -249,7 +218,7 @@ async function humanizeText({
       const content = bulletMatch ? trimmed.slice(prefix.length) : trimmed;
       
       if (content.length < 10) {
-        processedBlocks.push(prefix + applyHomoglyphs(content));
+        processedBlocks.push(prefix + content);
         continue;
       }
       
@@ -267,29 +236,6 @@ async function humanizeText({
     console.error('[Humanize Error] Engine failed:', err);
     throw new Error('Failed to process text. Please try again.');
   }
-}
-
-// Extracted homoglyph logic so it can be used standalone for short text
-function applyHomoglyphs(text) {
-  const HOMOGLYPHS = {
-    'a': 'а', 'c': 'с', 'e': 'е', 'o': 'о',
-    'p': 'р', 'x': 'х', 'y': 'у'
-  };
-  
-  let words = text.split(' ');
-  for (let w = 0; w < words.length; w++) {
-    if (words[w].length > 3 && Math.random() < 0.4) {
-      let charArray = words[w].split('');
-      for (let c = 0; c < charArray.length; c++) {
-        if (HOMOGLYPHS[charArray[c]] && Math.random() < 0.5) {
-          charArray[c] = HOMOGLYPHS[charArray[c]];
-          break;
-        }
-      }
-      words[w] = charArray.join('');
-    }
-  }
-  return words.join(' ');
 }
 
 module.exports = { humanizeText };
