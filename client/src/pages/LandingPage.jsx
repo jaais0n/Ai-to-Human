@@ -30,10 +30,10 @@ const features = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-black selection:bg-white/20 selection:text-white">
+    <div className="min-h-screen bg-white dark:bg-black selection:bg-black/20 dark:selection:bg-white/20 selection:text-black dark:selection:text-white">
       {/* Subtle grid background */}
-      <div className="absolute inset-0 z-0 opacity-20 pointer-events-none" 
-           style={{ backgroundImage: 'radial-gradient(circle at center, #ffffff 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
+      <div className="absolute inset-0 z-0 opacity-[0.03] dark:opacity-20 pointer-events-none" 
+           style={{ backgroundImage: 'radial-gradient(circle at center, currentColor 1px, transparent 1px)', backgroundSize: '40px 40px' }} />
 
       <div className="relative z-10 pt-32 pb-24 px-6 md:px-12 flex flex-col items-center">
         
@@ -44,16 +44,16 @@ export default function LandingPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
           >
-            <div className="inline-flex items-center gap-2 px-3 py-1 mb-8 border border-white/10 rounded-full text-xs font-medium text-neutral-400">
-              <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" />
+            <div className="inline-flex items-center gap-2 px-3 py-1 mb-8 border border-neutral-200 dark:border-white/10 rounded-full text-xs font-medium text-neutral-500 dark:text-neutral-400">
+              <span className="w-1.5 h-1.5 rounded-full bg-neutral-800 dark:bg-white animate-pulse" />
               Editorial Grade Engine
             </div>
 
-            <h1 className="text-5xl md:text-7xl font-semibold tracking-tight text-white mb-6 leading-[1.1]">
+            <h1 className="text-5xl md:text-7xl font-semibold tracking-tight text-neutral-900 dark:text-white mb-6 leading-[1.1]">
               Write like a human.
             </h1>
 
-            <p className="text-lg text-neutral-400 max-w-xl mx-auto mb-10 leading-relaxed font-light">
+            <p className="text-lg text-neutral-500 dark:text-neutral-400 max-w-xl mx-auto mb-10 leading-relaxed font-light">
               A minimalist, high-fidelity tool to rewrite, refine, and humanize your content. 
               Designed for writers who demand authenticity.
             </p>
@@ -63,7 +63,7 @@ export default function LandingPage() {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className="flex items-center gap-2 px-8 py-3.5 bg-white text-black rounded-lg font-medium hover:bg-neutral-200 transition-colors"
+                  className="flex items-center gap-2 px-8 py-3.5 bg-neutral-900 dark:bg-white text-white dark:text-black rounded-lg font-medium hover:bg-neutral-800 dark:hover:bg-neutral-200 transition-colors"
                 >
                   Open Workspace
                   <ArrowRight className="w-4 h-4" />
@@ -74,17 +74,17 @@ export default function LandingPage() {
         </div>
 
         {/* Feature Grid */}
-        <div className="w-full max-w-5xl mx-auto grid md:grid-cols-2 gap-px bg-white/10 border border-white/10 rounded-2xl overflow-hidden mb-24">
+        <div className="w-full max-w-5xl mx-auto grid md:grid-cols-2 gap-px bg-neutral-200 dark:bg-white/10 border border-neutral-200 dark:border-white/10 rounded-2xl overflow-hidden mb-24">
           {features.map((f, i) => (
             <motion.div
               key={f.title}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.2 + i * 0.1 }}
-              className="bg-black p-10 flex flex-col"
+              className="bg-white dark:bg-black p-10 flex flex-col"
             >
               <f.icon className="w-5 h-5 text-neutral-400 mb-6" />
-              <h3 className="text-lg font-medium text-white mb-2">{f.title}</h3>
+              <h3 className="text-lg font-medium text-neutral-900 dark:text-white mb-2">{f.title}</h3>
               <p className="text-sm text-neutral-500 leading-relaxed max-w-[280px]">{f.desc}</p>
             </motion.div>
           ))}
@@ -95,10 +95,10 @@ export default function LandingPage() {
           initial={{ opacity: 0, y: 10 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.5 }}
-          className="w-full max-w-2xl mx-auto border border-white/10 rounded-2xl p-10 bg-[#050505]"
+          className="w-full max-w-2xl mx-auto border border-neutral-200 dark:border-white/10 rounded-2xl p-10 bg-neutral-50 dark:bg-[#050505]"
         >
           <div className="flex flex-col items-center mb-8">
-            <h2 className="font-medium text-white text-xl">The Standard</h2>
+            <h2 className="font-medium text-neutral-900 dark:text-white text-xl">The Standard</h2>
           </div>
           <div className="grid sm:grid-cols-2 gap-y-4 gap-x-8">
             {[

@@ -54,7 +54,7 @@ async function translationChain(text, languages) {
   return currentText;
 }
 
-function aggressiveHeuristics(text) {
+function aggressiveHeuristics(text, creativity = 50, complexity = 50, tone = '') {
   let doc = nlp(text);
   
   // 1. Force all possible contractions
@@ -67,36 +67,39 @@ function aggressiveHeuristics(text) {
   });
 
   // 3. Swap AI words for idioms or extremely casual phrases
-  const IDIOMS = {
-    'utilize': 'put to use',
-    'leverage': 'take advantage of',
-    'facilitate': 'smooth the way for',
-    'optimize': 'fine-tune',
-    'enhance': 'beef up',
-    'mitigate': 'soften the blow of',
-    'elucidate': 'clear up',
-    'crucial': 'make-or-break',
-    'vital': 'super important',
-    'paramount': 'the absolute top priority',
-    'multifaceted': 'layered',
-    'plethora': 'whole bunch',
-    'myriad': 'ton',
-    'delve': 'dive deep',
-    'foster': 'nurture',
-    'robust': 'rock-solid',
-    'seamless': 'frictionless',
-    'understand': 'wrap our heads around',
-    'discover': 'stumble upon',
-    'important': 'a big deal',
-    'significant': 'major',
-    'perspective': 'point of view',
-    'innovative': 'out-of-the-box'
-  };
+  // If complexity is high (>70), don't swap to very casual idioms
+  if (complexity < 70) {
+    const IDIOMS = {
+      'utilize': 'put to use',
+      'leverage': 'take advantage of',
+      'facilitate': 'smooth the way for',
+      'optimize': 'fine-tune',
+      'enhance': 'beef up',
+      'mitigate': 'soften the blow of',
+      'elucidate': 'clear up',
+      'crucial': 'make-or-break',
+      'vital': 'super important',
+      'paramount': 'the absolute top priority',
+      'multifaceted': 'layered',
+      'plethora': 'whole bunch',
+      'myriad': 'ton',
+      'delve': 'dive deep',
+      'foster': 'nurture',
+      'robust': 'rock-solid',
+      'seamless': 'frictionless',
+      'understand': 'wrap our heads around',
+      'discover': 'stumble upon',
+      'important': 'a big deal',
+      'significant': 'major',
+      'perspective': 'point of view',
+      'innovative': 'out-of-the-box'
+    };
 
-  Object.keys(IDIOMS).forEach(word => {
-    const regex = new RegExp(`\\b${word}\\b`, 'gi');
-    processed = processed.replace(regex, IDIOMS[word]);
-  });
+    Object.keys(IDIOMS).forEach(word => {
+      const regex = new RegExp(`\\b${word}\\b`, 'gi');
+      processed = processed.replace(regex, IDIOMS[word]);
+    });
+  }
 
   // 4. Force extreme burstiness (chop sentences & add parentheticals)
   let sentences = processed.split(/([.?!])\s*/).filter(Boolean);
@@ -112,14 +115,31 @@ function aggressiveHeuristics(text) {
     " — and this is key — "
   ];
   
+  // Calculate probabilities based on creativity and complexity
+  const cRatio = creativity / 100;
+  const chopProb = 0.5 * (1 - (complexity / 100)) * (cRatio + 0.5); // Lower complexity = higher chop
+  const quirkProb = 0.3 * cRatio;
+  const starterProb = 0.25 * cRatio;
+  const questionProb = 0.1 * cRatio;
+  
   for (let i = 0; i < sentences.length; i += 2) {
     let sentence = sentences[i].trim();
     let punctuation = sentences[i + 1] || '.';
     
     if (!sentence) continue;
 
+    // Tone injection (prepend tone-specific starters to first sentence or randomly)
+    if (tone && i === 0 && Math.random() < 0.8) {
+       const lowerTone = tone.toLowerCase();
+       if (lowerTone.includes('friendly') || lowerTone.includes('casual')) {
+          sentence = "Hey there! " + sentence.charAt(0).toUpperCase() + sentence.slice(1);
+       } else if (lowerTone.includes('professional') || lowerTone.includes('formal')) {
+          sentence = "It is essential to consider that " + sentence.charAt(0).toLowerCase() + sentence.slice(1);
+       }
+    }
+
     // A) Chop medium sentences randomly on conjunctions
-    if (sentence.length > 40 && Math.random() < 0.5) {
+    if (sentence.length > 40 && Math.random() < chopProb) {
       const parts = sentence.split(/\b(and|but|so|because|or)\b/i);
       if (parts.length >= 3) {
         sentence = parts[0].trim();
@@ -130,7 +150,7 @@ function aggressiveHeuristics(text) {
     }
     
     // B) Inject structural quirks (em-dashes and parentheses)
-    if (sentence.length > 60 && Math.random() < 0.3) {
+    if (sentence.length > 60 && Math.random() < quirkProb) {
       const words = sentence.split(' ');
       const mid = Math.floor(words.length / 2);
       const quirk = QUIRKS[Math.floor(Math.random() * QUIRKS.length)];
@@ -139,14 +159,14 @@ function aggressiveHeuristics(text) {
     }
 
     // C) Add casual starters randomly
-    if (Math.random() < 0.25 && sentence.length > 15) {
+    if (Math.random() < starterProb && sentence.length > 15 && complexity < 60) {
       const starters = ["Look. ", "Honestly, ", "Think about it. ", "And here's the thing... ", "Basically, ", "Right. ", "See, "];
       const starter = starters[Math.floor(Math.random() * starters.length)];
       sentence = starter + sentence.charAt(0).toLowerCase() + sentence.slice(1);
     }
 
     // D) Turn some statements into rhetorical questions
-    if (Math.random() < 0.1 && sentence.length > 30 && !sentence.endsWith('?')) {
+    if (Math.random() < questionProb && sentence.length > 30 && !sentence.endsWith('?')) {
       sentence = sentence.replace(/[.!]+$/, '');
       sentence = "And " + sentence.charAt(0).toLowerCase() + sentence.slice(1) + ", right?";
       punctuation = '';
@@ -158,41 +178,32 @@ function aggressiveHeuristics(text) {
   let finalString = finalSentences.join(' ');
   
   // 5. Cyrillic Homoglyph Injection (The UNDETECTABLE Bypass)
-  // Advanced detectors strip zero-width spaces. They CANNOT strip Cyrillic letters 
-  // because they are valid characters. By replacing random Latin letters with 
-  // identical-looking Cyrillic letters, we break the AI tokenizer completely, 
-  // ensuring a 0% AI score.
-  
   const HOMOGLYPHS = {
-    'a': 'а', // Cyrillic a (U+0430)
-    'c': 'с', // Cyrillic c (U+0441)
-    'e': 'е', // Cyrillic e (U+0435)
-    'o': 'о', // Cyrillic o (U+043E)
-    'p': 'р', // Cyrillic p (U+0440)
-    'x': 'х', // Cyrillic x (U+0445)
-    'y': 'у'  // Cyrillic y (U+0443)
+    'a': 'а', 'c': 'с', 'e': 'е', 'o': 'о',
+    'p': 'р', 'x': 'х', 'y': 'у'
   };
+
+  const homoProb = 0.4 * cRatio; // Higher creativity = more homoglyphs
 
   let words = finalString.split(' ');
   for (let w = 0; w < words.length; w++) {
-    // Only target words longer than 3 characters, and apply to about 40% of words
-    if (words[w].length > 3 && Math.random() < 0.4) {
+    if (words[w].length > 3 && Math.random() < homoProb) {
       let charArray = words[w].split('');
       for (let c = 0; c < charArray.length; c++) {
-        let char = charArray[c];
-        // If the character has a homoglyph, 50% chance to replace it
-        if (HOMOGLYPHS[char] && Math.random() < 0.5) {
-          charArray[c] = HOMOGLYPHS[char];
-          break; // Only replace one character per word to avoid making it too messy
+        if (HOMOGLYPHS[charArray[c]] && Math.random() < 0.5) {
+          charArray[c] = HOMOGLYPHS[charArray[c]];
+          break; 
         }
       }
       words[w] = charArray.join('');
     }
   }
 
-  // 6. Minor formatting imperfections (Double spaces)
+  // 6. Minor formatting imperfections
   let homoglyphText = words.join(' ');
-  homoglyphText = homoglyphText.replace(/\. /g, '.  '); // Double space after periods like older typists
+  if (creativity > 60) {
+    homoglyphText = homoglyphText.replace(/\. /g, '.  '); 
+  }
 
   return homoglyphText;
 }
@@ -207,13 +218,13 @@ async function humanizeText({
 }) {
   console.log('[Humanizer] Starting Ultimate Bypass...');
   
-  // Step 0: Preserve formatting — split into blocks by line breaks
-  // This preserves bullet points, numbered lists, paragraphs, etc.
   const blocks = text.split(/\n/);
   
   let chain = ['ja', 'de', 'es', 'en'];
   if (strength > 70) {
     chain = ['zh-CN', 'ru', 'ar', 'fr', 'en'];
+  } else if (strength < 40) {
+    chain = ['es', 'en']; // lower strength = fewer translation hops
   }
 
   try {
@@ -222,29 +233,25 @@ async function humanizeText({
     for (const block of blocks) {
       const trimmed = block.trim();
       
-      // Preserve empty lines (paragraph breaks) as-is
       if (trimmed === '') {
         processedBlocks.push('');
         continue;
       }
       
-      // Detect and preserve bullet/list prefixes
       const bulletMatch = trimmed.match(/^(\s*(?:[-•*]|\d+[.)]\s?)\s*)/);
       const prefix = bulletMatch ? bulletMatch[1] : '';
       const content = bulletMatch ? trimmed.slice(prefix.length) : trimmed;
       
-      // Skip very short fragments (headers, labels, etc.) — just apply homoglyphs
       if (content.length < 10) {
         processedBlocks.push(prefix + applyHomoglyphs(content));
         continue;
       }
       
-      // Step 1: Translation chain on this block only
       let translated = await translationChain(content, chain);
       if (!translated || translated.trim() === '') translated = content;
       
-      // Step 2: Apply heuristics on this block only
-      const humanized = aggressiveHeuristics(translated);
+      // Pass the advanced controls to the heuristics engine
+      const humanized = aggressiveHeuristics(translated, creativity, complexity, tone);
       
       processedBlocks.push(prefix + humanized);
     }

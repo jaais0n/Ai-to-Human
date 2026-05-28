@@ -6,6 +6,20 @@
 
 @layer base {
   :root {
+    --bg-primary: #ffffff;
+    --bg-secondary: #f4f4f5;
+    --bg-card: #fafafa;
+    --bg-card-hover: #f0f0f0;
+    --border-subtle: rgba(0, 0, 0, 0.08);
+    --border-hover: rgba(0, 0, 0, 0.15);
+    --text-primary: #171717;
+    --text-secondary: #525252;
+    --text-muted: #737373;
+    --accent: #000000;
+    --accent-dim: rgba(0, 0, 0, 0.04);
+  }
+
+  :root.dark {
     --bg-primary: #000000;
     --bg-secondary: #0a0a0a;
     --bg-card: #0d0d0d;
@@ -79,15 +93,15 @@
   }
 
   .btn-primary {
-    background: #fff;
-    color: #000;
+    background: var(--text-primary);
+    color: var(--bg-primary);
     font-weight: 600;
     border-radius: 12px;
     transition: all 0.2s ease;
   }
 
   .btn-primary:hover {
-    background: #e0e0e0;
+    opacity: 0.9;
     transform: translateY(-1px);
   }
 
@@ -96,8 +110,8 @@
   }
 
   .btn-primary:disabled {
-    background: #333;
-    color: #666;
+    background: var(--border-hover);
+    color: var(--text-muted);
     cursor: not-allowed;
     transform: none;
   }
