@@ -40,9 +40,9 @@ export default function HumanizeButton() {
       </motion.button>
 
       <p className="text-[11px] text-neutral-700">
-        <kbd className="px-1 py-0.5 rounded bg-white/5 border border-white/8 font-mono text-[11px]">Ctrl</kbd>
+        <kbd className="px-1 py-0.5 rounded bg-[var(--accent-dim)] border border-[var(--border-subtle)] font-mono text-[11px]">Ctrl</kbd>
         {' + '}
-        <kbd className="px-1 py-0.5 rounded bg-white/5 border border-white/8 font-mono text-[11px]">Enter</kbd>
+        <kbd className="px-1 py-0.5 rounded bg-[var(--accent-dim)] border border-[var(--border-subtle)] font-mono text-[11px]">Enter</kbd>
       </p>
     </div>
   );

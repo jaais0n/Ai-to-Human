@@ -61,7 +61,7 @@ export default function SettingsPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-2xl font-bold text-white mb-2">Settings</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-2">Settings</h1>
           <p className="text-sm text-slate-400">Configure your preferences and writing defaults.</p>
         </motion.div>
 

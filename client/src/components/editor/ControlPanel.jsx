@@ -18,7 +18,7 @@ function Slider({ label, value, onChange, min = 0, max = 100, step = 1, descript
         onChange={(e) => onChange(Number(e.target.value))}
         className="w-full"
         style={{
-          background: `linear-gradient(to right, rgba(255,255,255,0.5) 0%, rgba(255,255,255,0.5) ${value}%, rgba(255,255,255,0.08) ${value}%, rgba(255,255,255,0.08) 100%)`,
+          background: `linear-gradient(to right, var(--slider-filled) 0%, var(--slider-filled) ${value}%, var(--slider-empty) ${value}%, var(--slider-empty) 100%)`,
         }}
       />
       {description && (
@@ -80,7 +80,7 @@ export default function ControlPanel() {
               value={tone}
               onChange={(e) => setTone(e.target.value)}
               placeholder="e.g. friendly, authoritative..."
-              className="w-full px-3 py-2 rounded-lg bg-white/3 border border-white/8 text-sm text-neutral-200 placeholder-neutral-700 outline-none focus:border-white/20 transition-colors"
+              className="w-full px-3 py-2 rounded-lg bg-[var(--accent-dim)] border border-[var(--border-subtle)] text-sm text-[var(--text-primary)] placeholder-neutral-500 outline-none focus:border-[var(--border-hover)] transition-colors"
             />
           </div>
         </div>

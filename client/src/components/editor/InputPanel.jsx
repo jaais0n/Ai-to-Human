@@ -48,7 +48,7 @@ export default function InputPanel() {
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-white/40" />
+          <div className="w-1.5 h-1.5 rounded-full bg-[var(--text-muted)]" />
           <h2 className="text-xs font-medium uppercase tracking-wider text-neutral-500">Input</h2>
         </div>
         <div className="flex items-center gap-1.5">
@@ -88,7 +88,7 @@ export default function InputPanel() {
       >
         {!inputText && (
           <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 pointer-events-none">
-            <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center">
+            <div className="w-10 h-10 rounded-lg bg-[var(--accent-dim)] flex items-center justify-center">
               <FileText className="w-4 h-4 text-neutral-600" />
             </div>
             <div className="text-center">
@@ -109,12 +109,12 @@ export default function InputPanel() {
 
         {/* Char limit bar */}
         {inputText && (
-          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-white/5">
+          <div className="absolute bottom-0 left-0 right-0 h-[2px] bg-[var(--accent-dim)]">
             <motion.div
               className="h-full rounded-full transition-colors duration-300"
               style={{
                 width: `${charPercent}%`,
-                background: isNearLimit ? '#ef4444' : 'rgba(255,255,255,0.3)',
+                background: isNearLimit ? '#ef4444' : 'var(--text-secondary)',
               }}
               initial={{ width: 0 }}
               animate={{ width: `${charPercent}%` }}

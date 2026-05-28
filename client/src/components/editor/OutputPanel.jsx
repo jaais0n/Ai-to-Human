@@ -38,7 +38,7 @@ export default function OutputPanel() {
       {/* Header */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <div className="w-1.5 h-1.5 rounded-full bg-white/40" />
+          <div className="w-1.5 h-1.5 rounded-full bg-[var(--text-muted)]" />
           <h2 className="text-xs font-medium uppercase tracking-wider text-neutral-500">Output</h2>
           {isTyping && (
             <span className="text-[11px] text-neutral-500" style={{ animation: 'pulse-subtle 1.5s ease infinite' }}>
@@ -74,7 +74,7 @@ export default function OutputPanel() {
               className="h-full"
             >
               <div className="flex items-center gap-2 mb-4">
-                <div className="w-4 h-4 rounded-full border-2 border-white/30 border-t-transparent animate-spin" />
+                <div className="w-4 h-4 rounded-full border-2 border-[var(--text-secondary)] border-t-transparent animate-spin" />
                 <span className="text-xs text-neutral-500">Processing...</span>
               </div>
               <SkeletonBlock />
@@ -87,7 +87,7 @@ export default function OutputPanel() {
               className="h-full overflow-y-auto"
             >
               <p
-                className={`text-sm leading-relaxed text-neutral-200 whitespace-pre-wrap ${isTyping ? 'typing-cursor' : ''}`}
+                className={`text-sm leading-relaxed text-[var(--text-primary)] whitespace-pre-wrap ${isTyping ? 'typing-cursor' : ''}`}
               >
                 {displayed}
               </p>
@@ -99,14 +99,14 @@ export default function OutputPanel() {
               animate={{ opacity: 1 }}
               className="h-full flex flex-col items-center justify-center gap-3 text-center"
             >
-              <div className="w-10 h-10 rounded-lg bg-white/5 flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg bg-[var(--accent-dim)] flex items-center justify-center">
                 <FileText className="w-4 h-4 text-neutral-600" />
               </div>
               <p className="text-sm text-neutral-600">
                 Output will appear here
               </p>
               <p className="text-[11px] text-neutral-700">
-                <kbd className="px-1.5 py-0.5 rounded bg-white/5 border border-white/10 font-mono text-[11px]">Ctrl+Enter</kbd> to run
+                <kbd className="px-1.5 py-0.5 rounded bg-[var(--accent-dim)] border border-[var(--border-subtle)] font-mono text-[11px]">Ctrl+Enter</kbd> to run
               </p>
             </motion.div>
           )}

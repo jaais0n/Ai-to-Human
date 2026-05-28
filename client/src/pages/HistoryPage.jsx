@@ -13,7 +13,7 @@ export default function HistoryPage() {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h1 className="text-2xl font-bold text-white mb-2">History</h1>
+          <h1 className="text-2xl font-bold text-[var(--text-primary)] mb-2">History</h1>
           <p className="text-sm text-slate-400">
             Your last {history.length} humanization sessions. Click any entry to reload it.
           </p>

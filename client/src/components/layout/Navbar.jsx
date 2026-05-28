@@ -10,9 +10,9 @@ export default function Navbar() {
       <div
         className="h-full px-6 flex items-center justify-between border-b"
         style={{ 
-          background: theme === 'dark' ? 'rgba(0, 0, 0, 0.8)' : 'rgba(255, 255, 255, 0.8)', 
+          background: 'var(--bg-primary)', 
           backdropFilter: 'blur(12px)', 
-          borderColor: theme === 'dark' ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.08)' 
+          borderColor: 'var(--border-subtle)' 
         }}
       >
         <Link to="/" className="flex items-center gap-2.5">

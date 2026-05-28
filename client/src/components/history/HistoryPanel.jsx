@@ -41,7 +41,7 @@ export default function HistoryPanel({ onClose }) {
           {onClose && (
             <button
               onClick={onClose}
-              className="p-1 rounded-md text-neutral-600 hover:text-white hover:bg-white/5 transition-colors"
+              className="p-1 rounded-md text-neutral-600 hover:text-[var(--text-primary)] hover:bg-[var(--accent-dim)] transition-colors"
             >
               <X className="w-3.5 h-3.5" />
             </button>
@@ -51,7 +51,7 @@ export default function HistoryPanel({ onClose }) {
 
       {history.length === 0 ? (
         <div className="flex-1 flex flex-col items-center justify-center gap-3 text-center">
-          <div className="w-9 h-9 rounded-lg bg-white/5 flex items-center justify-center">
+          <div className="w-9 h-9 rounded-lg bg-[var(--accent-dim)] flex items-center justify-center">
             <Clock className="w-4 h-4 text-neutral-700" />
           </div>
           <p className="text-xs text-neutral-700">No history yet</p>
@@ -65,13 +65,13 @@ export default function HistoryPanel({ onClose }) {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, x: -20 }}
-                className="card-inner rounded-lg p-3 hover:bg-white/3 transition-all cursor-pointer group"
+                className="card-inner rounded-lg p-3 hover:bg-[var(--bg-card-hover)] transition-all cursor-pointer group"
                 onClick={() => loadEntry(entry)}
               >
                 <div className="flex items-start justify-between gap-2">
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2 mb-1">
-                      <span className="text-[11px] px-1.5 py-0.5 rounded bg-white/5 text-neutral-500 capitalize">
+                      <span className="text-[11px] px-1.5 py-0.5 rounded bg-[var(--accent-dim)] text-neutral-500 capitalize">
                         {entry.mode}
                       </span>
                       <span className="text-[11px] text-neutral-700">{entry.wordCount}w</span>

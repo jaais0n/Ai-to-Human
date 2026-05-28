@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { History, X, Diff } from 'lucide-react';
 import InputPanel from '../components/editor/InputPanel';
@@ -9,10 +9,22 @@ import ControlPanel from '../components/editor/ControlPanel';
 import HistoryPanel from '../components/history/HistoryPanel';
 import DiffViewer from '../components/editor/DiffViewer';
 import useAppStore from '../store/useAppStore';
+import { useHumanize } from '../hooks/useHumanize';
 
 export default function DashboardPage() {
   const [showHistory, setShowHistory] = useState(false);
-  const { showDiff, setShowDiff, inputText, outputText } = useAppStore();
+  const { showDiff, setShowDiff, inputText, outputText, mode, strength, creativity, complexity, tone } = useAppStore();
+  const { humanize } = useHumanize();
+
+  useEffect(() => {
+    // Only auto-trigger if an output already exists (meaning the user is tweaking settings for an active text)
+    if (outputText && inputText) {
+      const timer = setTimeout(() => {
+        humanize();
+      }, 800); // 800ms debounce
+      return () => clearTimeout(timer);
+    }
+  }, [mode, strength, creativity, complexity, tone]);
 
   return (
     <div className="min-h-screen pt-18 pb-8 px-4 md:px-6">
@@ -32,7 +44,7 @@ export default function DashboardPage() {
                 <button
                   onClick={() => setShowDiff(!showDiff)}
                   className={`btn-ghost flex items-center gap-1.5 px-3 py-2 ${
-                    showDiff ? 'bg-white/10 border-white/20 text-white' : ''
+                    showDiff ? 'bg-[var(--accent-dim)] border-[var(--border-hover)] text-[var(--text-primary)]' : ''
                   }`}
                 >
                   <Diff className="w-3.5 h-3.5" />
@@ -42,7 +54,7 @@ export default function DashboardPage() {
               <button
                 onClick={() => setShowHistory(!showHistory)}
                 className={`btn-ghost flex items-center gap-1.5 px-3 py-2 ${
-                  showHistory ? 'bg-white/10 border-white/20 text-white' : ''
+                  showHistory ? 'bg-[var(--accent-dim)] border-[var(--border-hover)] text-[var(--text-primary)]' : ''
                 }`}
               >
                 <History className="w-3.5 h-3.5" />

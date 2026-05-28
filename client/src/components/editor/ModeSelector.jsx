@@ -23,8 +23,8 @@ export default function ModeSelector() {
             whileTap={{ scale: 0.97 }}
             className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all duration-150 ${
               isActive
-                ? 'bg-white text-black'
-                : 'text-neutral-500 hover:text-white hover:bg-white/5'
+                ? 'bg-[var(--text-primary)] text-[var(--bg-primary)]'
+                : 'text-[var(--text-secondary)] hover:text-[var(--text-primary)] hover:bg-[var(--accent-dim)]'
             }`}
             aria-pressed={isActive}
           >

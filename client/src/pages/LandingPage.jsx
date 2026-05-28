@@ -124,7 +124,7 @@ export default function LandingPage() {
           transition={{ delay: 0.7 }}
           className="mt-32 mb-12 text-center"
         >
-          <Link to="/dashboard" className="text-sm text-neutral-500 hover:text-white transition-colors flex items-center justify-center gap-2">
+          <Link to="/dashboard" className="text-sm text-neutral-500 hover:text-neutral-900 dark:hover:text-white transition-colors flex items-center justify-center gap-2">
             Start writing <ArrowRight className="w-3 h-3" />
           </Link>
         </motion.div>

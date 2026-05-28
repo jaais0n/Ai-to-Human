@@ -10,7 +10,7 @@ import { Analytics } from '@vercel/analytics/react';
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="min-h-screen" style={{ background: '#000' }}>
+      <div className="min-h-screen bg-[var(--bg-primary)]">
         <Navbar />
         <Routes>
           <Route path="/" element={<LandingPage />} />
