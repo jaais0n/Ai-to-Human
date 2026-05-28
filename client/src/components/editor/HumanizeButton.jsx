@@ -31,12 +31,8 @@ export default function HumanizeButton() {
         }`}
         aria-label="Humanize content"
       >
-        {isLoading ? (
-          <Loader2 className="w-4 h-4 animate-spin" />
-        ) : (
-          <PenTool className="w-4 h-4" />
-        )}
-        <span>{isLoading ? 'Processing...' : 'Rewrite'}</span>
+        <PenTool className="w-4 h-4" />
+        <span>Rewrite</span>
       </motion.button>
 
       <p className="text-[11px] text-neutral-700">

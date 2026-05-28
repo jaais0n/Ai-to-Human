@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
 import { History, X, Diff } from 'lucide-react';
 import InputPanel from '../components/editor/InputPanel';
 import OutputPanel from '../components/editor/OutputPanel';
@@ -29,6 +30,18 @@ export default function DashboardPage() {
   // Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = async (e) => {
+      // Ctrl/Cmd + Z to Undo
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === 'z') {
+        e.preventDefault();
+        useAppStore.temporal.getState().undo();
+      }
+
+      // Ctrl/Cmd + Shift + Z or Ctrl/Cmd + Y to Redo
+      if ((e.ctrlKey || e.metaKey) && ((e.shiftKey && e.key.toLowerCase() === 'z') || e.key.toLowerCase() === 'y')) {
+        e.preventDefault();
+        useAppStore.temporal.getState().redo();
+      }
+
       // Ctrl/Cmd + Enter to Humanize
       if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
         e.preventDefault();
@@ -40,8 +53,6 @@ export default function DashboardPage() {
         e.preventDefault();
         if (outputText) {
           await navigator.clipboard.writeText(outputText);
-          // Small visual feedback could be added here, but toast is already in OutputPanel.
-          // Wait, addToast is in store.
           useAppStore.getState().addToast({ type: 'success', message: 'Copied to clipboard' });
         }
       }
@@ -52,7 +63,11 @@ export default function DashboardPage() {
   }, [humanize, isLoading, outputText]);
 
   return (
-    <div className="min-h-screen pt-18 pb-8 px-4 md:px-6">
+    <>
+      <Helmet>
+        <title>Workspace | ai2human</title>
+      </Helmet>
+      <div className="min-h-screen pt-18 pb-8 px-4 md:px-6">
       <div className="max-w-[1400px] mx-auto">
         {/* Top controls bar */}
         <motion.div
@@ -159,6 +174,7 @@ export default function DashboardPage() {
           </AnimatePresence>
         </div>
       </div>
-    </div>
+      </div>
+    </>
   );
 }

@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { Helmet } from 'react-helmet-async';
 import {
   PenTool, ArrowRight, ShieldCheck, FileText, Settings2,
   CheckCircle2
@@ -30,7 +31,16 @@ const features = [
 
 export default function LandingPage() {
   return (
-    <div className="min-h-screen bg-white dark:bg-black selection:bg-black/20 dark:selection:bg-white/20 selection:text-black dark:selection:text-white">
+    <>
+      <Helmet>
+        <title>ai2human | Editorial Grade AI Humanizer</title>
+        <meta name="description" content="Write like a human. A minimalist, high-fidelity tool to rewrite, refine, and humanize your content." />
+        <meta property="og:title" content="ai2human | Editorial Grade AI Humanizer" />
+        <meta property="og:description" content="Write like a human. A minimalist, high-fidelity tool to rewrite, refine, and humanize your content." />
+        <meta property="og:type" content="website" />
+        <meta name="twitter:card" content="summary_large_image" />
+      </Helmet>
+      <div className="min-h-screen bg-white dark:bg-black selection:bg-black/20 dark:selection:bg-white/20 selection:text-black dark:selection:text-white">
       {/* Thunder Flash animation in background */}
       <motion.div
         initial={{ opacity: 0 }}
@@ -138,6 +148,7 @@ export default function LandingPage() {
         </motion.div>
 
       </div>
-    </div>
+      </div>
+    </>
   );
 }
