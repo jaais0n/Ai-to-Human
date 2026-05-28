@@ -117,9 +117,9 @@ function aggressiveHeuristics(text, creativity = 50, complexity = 50, tone = '')
   
   // Calculate probabilities based on creativity and complexity
   const cRatio = creativity / 100;
-  const chopProb = 0.5 * (1 - (complexity / 100)) * (cRatio + 0.5); // Lower complexity = higher chop
-  const quirkProb = 0.3 * cRatio;
-  const starterProb = 0.25 * cRatio;
+  const chopProb = 0.3 * (1 - (complexity / 100)) * (cRatio + 0.5); // Lowered
+  const quirkProb = 0.1 * cRatio; // Lowered from 0.3
+  const starterProb = 0.1 * cRatio; // Lowered from 0.25
   const questionProb = 0.1 * cRatio;
   
   for (let i = 0; i < sentences.length; i += 2) {
@@ -172,6 +172,9 @@ function aggressiveHeuristics(text, creativity = 50, complexity = 50, tone = '')
       punctuation = '';
     }
 
+    // Ensure we don't accidentally double-punctuate
+    if (sentence.endsWith(punctuation)) punctuation = '';
+
     finalSentences.push(sentence + punctuation);
   }
 
@@ -199,13 +202,16 @@ function aggressiveHeuristics(text, creativity = 50, complexity = 50, tone = '')
     }
   }
 
-  // 6. Minor formatting imperfections
+  // 6. Final Cleanups (Fixes double spaces and excessive punctuation)
   let homoglyphText = words.join(' ');
-  if (creativity > 60) {
-    homoglyphText = homoglyphText.replace(/\. /g, '.  '); 
-  }
+  
+  // Clean up excessive periods (more than 3 into exactly 3)
+  homoglyphText = homoglyphText.replace(/\.{4,}/g, '...');
+  
+  // Clean up double spaces caused by slicing
+  homoglyphText = homoglyphText.replace(/\s{2,}/g, ' ');
 
-  return homoglyphText;
+  return homoglyphText.trim();
 }
 
 async function humanizeText({
