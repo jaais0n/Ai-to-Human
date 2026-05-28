@@ -31,7 +31,10 @@ app.use('/api/health', healthRoutes);
 
 app.use((err, req, res, next) => {
   console.error(err.stack);
-  res.status(500).json({ error: 'Internal server error.' });
+  res.status(500).json({ 
+    error: err.message || 'Internal server error.',
+    stack: err.stack
+  });
 });
 
 if (require.main === module) {
