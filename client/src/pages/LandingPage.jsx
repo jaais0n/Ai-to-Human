@@ -31,12 +31,12 @@ const features = [
 export default function LandingPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-black selection:bg-black/20 dark:selection:bg-white/20 selection:text-black dark:selection:text-white">
-      {/* Flash animation on load */}
+      {/* Thunder Flash animation in background */}
       <motion.div
-        initial={{ opacity: 1 }}
-        animate={{ opacity: 0 }}
-        transition={{ duration: 0.8, ease: 'easeOut' }}
-        className="fixed inset-0 z-[100] pointer-events-none bg-neutral-900 dark:bg-white"
+        initial={{ opacity: 0 }}
+        animate={{ opacity: [0, 1, 0, 0.8, 0] }}
+        transition={{ duration: 1.5, times: [0, 0.1, 0.2, 0.3, 1], ease: 'easeInOut' }}
+        className="absolute inset-0 z-0 pointer-events-none bg-neutral-900 dark:bg-white"
       />
 
       {/* Subtle grid background */}
