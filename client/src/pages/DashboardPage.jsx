@@ -13,7 +13,7 @@ import { useHumanize } from '../hooks/useHumanize';
 
 export default function DashboardPage() {
   const [showHistory, setShowHistory] = useState(false);
-  const { showDiff, setShowDiff, inputText, outputText, mode, strength, creativity, complexity, tone } = useAppStore();
+  const { showDiff, setShowDiff, inputText, outputText, mode, strength, creativity, complexity, tone, isLoading } = useAppStore();
   const { humanize } = useHumanize();
 
   useEffect(() => {
@@ -25,6 +25,31 @@ export default function DashboardPage() {
       return () => clearTimeout(timer);
     }
   }, [mode, strength, creativity, complexity, tone]);
+
+  // Global Keyboard Shortcuts
+  useEffect(() => {
+    const handleKeyDown = async (e) => {
+      // Ctrl/Cmd + Enter to Humanize
+      if ((e.ctrlKey || e.metaKey) && e.key === 'Enter') {
+        e.preventDefault();
+        if (!isLoading) humanize();
+      }
+      
+      // Ctrl/Cmd + Shift + C to Copy Output
+      if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === 'c') {
+        e.preventDefault();
+        if (outputText) {
+          await navigator.clipboard.writeText(outputText);
+          // Small visual feedback could be added here, but toast is already in OutputPanel.
+          // Wait, addToast is in store.
+          useAppStore.getState().addToast({ type: 'success', message: 'Copied to clipboard' });
+        }
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [humanize, isLoading, outputText]);
 
   return (
     <div className="min-h-screen pt-18 pb-8 px-4 md:px-6">

@@ -122,6 +122,8 @@ const useAppStore = create(
         strength: state.strength,
         creativity: state.creativity,
         complexity: state.complexity,
+        inputText: state.inputText,
+        outputText: state.outputText,
       }),
     }
   )
