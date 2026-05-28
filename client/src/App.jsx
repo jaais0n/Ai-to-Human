@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import Navbar from './components/layout/Navbar';
 import ToastContainer from './components/ui/ToastContainer';
 import DashboardPage from './pages/DashboardPage';
+import { Analytics } from '@vercel/analytics/react';
 
 export default function App() {
   return (
@@ -10,6 +11,7 @@ export default function App() {
         <Navbar />
         <DashboardPage />
         <ToastContainer />
+        <Analytics />
       </div>
     </BrowserRouter>
   );
