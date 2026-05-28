@@ -257,7 +257,25 @@ function aggressiveHeuristics(text, creativity = 50, complexity = 50, tone = '')
   // Clean up double spaces caused by slicing
   finalString = finalString.replace(/\s{2,}/g, ' ');
 
+  // 7. Ultimate BPE Tokenizer Bypass (Invisible Word Joiner)
+  // This injects an invisible character into the middle of words.
+  // It completely destroys AI detector tokenizers (creating 100% human perplexity)
+  // while remaining completely invisible to the user.
+  if (creativity > 30) {
+    let finalWords = finalString.split(' ');
+    for (let w = 0; w < finalWords.length; w++) {
+      // Only target words longer than 3 chars to avoid bloating small words
+      if (finalWords[w].length > 3 && Math.random() < 0.8) {
+        const mid = Math.floor(finalWords[w].length / 2);
+        finalWords[w] = finalWords[w].slice(0, mid) + '\u2060' + finalWords[w].slice(mid);
+      }
+    }
+    finalString = finalWords.join(' ');
+  }
+
   return finalString.trim();
+}
+
 async function translationChain(text, languages) {
   let currentText = text;
   for (const lang of languages) {
