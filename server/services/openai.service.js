@@ -19,6 +19,23 @@ const PHRASE_REPLACEMENTS = [
   [/thus/gi, 'so'],
   [/hence/gi, 'so'],
   [/however/gi, 'but'],
+  [/delve into/gi, 'look at'],
+  [/a tapestry of/gi, 'a mix of'],
+  [/testament to/gi, 'proof of'],
+  [/underscore the importance/gi, 'show why it matters'],
+  [/at the end of the day/gi, 'ultimately'],
+  [/navigate the landscape/gi, 'find your way'],
+  [/shed light on/gi, 'explain'],
+  [/embark on/gi, 'start'],
+  [/as a matter of fact/gi, 'actually'],
+  [/first and foremost/gi, 'firstly'],
+  [/in light of/gi, 'because of'],
+  [/in a similar vein/gi, 'similarly'],
+  [/the vast majority/gi, 'most'],
+  [/with that being said/gi, 'that said'],
+  [/it goes without saying/gi, 'obviously'],
+  [/by and large/gi, 'mostly'],
+  [/for the most part/gi, 'mostly']
 ];
 
 const WORD_REPLACEMENTS = {
@@ -38,7 +55,21 @@ const WORD_REPLACEMENTS = {
   'delve': 'dig',
   'foster': 'encourage',
   'robust': 'strong',
-  'seamless': 'smooth'
+  'seamless': 'smooth',
+  'comprehensive': 'full',
+  'dynamic': 'active',
+  'synergy': 'teamwork',
+  'catalyst': 'spark',
+  'holistic': 'complete',
+  'paradigm': 'model',
+  'inherent': 'basic',
+  'resonate': 'connect',
+  'align': 'match',
+  'illuminating': 'helpful',
+  'underscore': 'highlight',
+  'testament': 'proof',
+  'tapestry': 'mix',
+  'bustling': 'busy'
 };
 
 async function translationChain(text, languages) {
@@ -66,7 +97,13 @@ function aggressiveHeuristics(text, creativity = 50, complexity = 50, tone = '')
     processed = processed.replace(pattern, replacement);
   });
 
-  // 3. Swap AI words for idioms or extremely casual phrases
+  // 3a. Swap AI words for simpler synonyms globally
+  Object.keys(WORD_REPLACEMENTS).forEach(word => {
+    const regex = new RegExp(`\\b${word}\\b`, 'gi');
+    processed = processed.replace(regex, WORD_REPLACEMENTS[word]);
+  });
+
+  // 3b. Swap AI words for idioms or extremely casual phrases
   // If complexity is high (>70), don't swap to very casual idioms
   if (complexity < 70) {
     const IDIOMS = {
@@ -92,7 +129,17 @@ function aggressiveHeuristics(text, creativity = 50, complexity = 50, tone = '')
       'important': 'a big deal',
       'significant': 'major',
       'perspective': 'point of view',
-      'innovative': 'out-of-the-box'
+      'innovative': 'out-of-the-box',
+      'comprehensive': 'all-around',
+      'dynamic': 'ever-changing',
+      'synergy': 'teamwork',
+      'catalyst': 'spark',
+      'holistic': 'big-picture',
+      'paradigm': 'model',
+      'inherent': 'built-in',
+      'resonate': 'hit home',
+      'align': 'match up',
+      'illuminating': 'eye-opening'
     };
 
     Object.keys(IDIOMS).forEach(word => {
@@ -100,6 +147,17 @@ function aggressiveHeuristics(text, creativity = 50, complexity = 50, tone = '')
       processed = processed.replace(regex, IDIOMS[word]);
     });
   }
+
+  // 3c. Drop common AI adverbs that detectors flag
+  const ADVERBS_TO_DROP = [
+    'significantly', 'increasingly', 'crucially', 'ultimately', 'undeniably',
+    'undoubtedly', 'certainly', 'fundamentally', 'intrinsically', 'essentially',
+    'consequently', 'subsequently', 'accordingly', 'notably'
+  ];
+  ADVERBS_TO_DROP.forEach(adv => {
+    const regex = new RegExp(`\\b${adv}\\b\\s*`, 'gi');
+    processed = processed.replace(regex, '');
+  });
 
   // 4. Force extreme burstiness (chop sentences & add parentheticals)
   let sentences = processed.split(/([.?!])\s*/).filter(Boolean);
