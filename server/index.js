@@ -12,12 +12,8 @@ const PORT = process.env.PORT || 3001;
 app.use(
   cors({
     origin: function (origin, callback) {
-      // Allow all localhost origins (any port)
-      if (!origin || origin.startsWith('http://localhost')) {
-        callback(null, true);
-      } else {
-        callback(new Error('Not allowed by CORS'));
-      }
+      // Allow all origins for this personal humanizer tool to prevent CORS errors on Vercel
+      callback(null, true);
     },
     credentials: true,
   })
