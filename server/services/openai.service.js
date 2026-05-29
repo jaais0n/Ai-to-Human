@@ -1,293 +1,259 @@
 const nlp = require('compromise');
+const https = require('https');
 const { translate } = require('@vitalets/google-translate-api');
 
 // ============================================================
-// ULTIMATE 0% AI BYPASS ENGINE (100% Free, NO API KEY)
+// HUMANIZER ENGINE v3 — COMBINED APPROACH (No API Key)
+// Translation back-translate + Selective synonyms + NLP cleanup
 // ============================================================
 
-const PHRASE_REPLACEMENTS = [
-  [/it is important to note that /gi, ''],
-  [/it is worth noting that /gi, ''],
-  [/in today's world/gi, 'these days'],
-  [/in the realm of/gi, 'when it comes to'],
-  [/furthermore/gi, 'also'],
-  [/moreover/gi, 'plus'],
-  [/additionally/gi, 'and'],
-  [/in conclusion/gi, 'to wrap up'],
-  [/to summarize/gi, 'basically'],
-  [/therefore/gi, 'so'],
-  [/thus/gi, 'so'],
-  [/hence/gi, 'so'],
-  [/however/gi, 'but'],
-  [/delve into/gi, 'look at'],
+// Words to never touch during synonym replacement
+const PROTECTED = new Set([
+  'ai', 'artificial', 'intelligence', 'machine', 'learning', 'data',
+  'algorithm', 'algorithms', 'technology', 'system', 'systems',
+  'computer', 'digital', 'internet', 'software', 'hardware',
+  'i', 'you', 'we', 'they', 'he', 'she', 'it', 'the', 'a', 'an',
+  'is', 'are', 'was', 'were', 'be', 'been', 'being',
+  'have', 'has', 'had', 'do', 'does', 'did',
+  'will', 'would', 'could', 'should', 'may', 'might', 'can',
+  'not', 'no', 'yes', 'and', 'or', 'but', 'if', 'so', 'yet',
+  'this', 'that', 'these', 'those', 'my', 'your', 'our', 'their',
+  'what', 'which', 'who', 'whom', 'where', 'when', 'why', 'how',
+  'all', 'each', 'every', 'both', 'few', 'more', 'most', 'some',
+  'any', 'many', 'much', 'own', 'other', 'such', 'than', 'too',
+  'very', 'just', 'also', 'only', 'still', 'even', 'then', 'now',
+  'work', 'make', 'take', 'give', 'get', 'go', 'come', 'see',
+  'know', 'think', 'say', 'tell', 'find', 'want', 'need', 'use',
+  'live', 'way', 'world', 'people', 'time', 'year', 'day', 'thing',
+  'part', 'place', 'case', 'point', 'fact', 'hand', 'life', 'kind',
+]);
+
+// =================== STEP 1: AI PHRASE KILLER ===================
+
+const AI_PHRASES = [
+  [/it is important to note that\s*/gi, ''],
+  [/it is worth noting that\s*/gi, ''],
+  [/it's worth mentioning that\s*/gi, ''],
+  [/in today's world,?\s*/gi, 'These days, '],
+  [/in the realm of/gi, 'in'],
+  [/furthermore,?\s*/gi, 'Also, '],
+  [/moreover,?\s*/gi, 'Plus, '],
+  [/additionally,?\s*/gi, 'And '],
+  [/in conclusion,?\s*/gi, 'To wrap it up, '],
+  [/to summarize,?\s*/gi, 'Basically, '],
+  [/therefore,?\s*/gi, 'So '],
+  [/thus,?\s*/gi, 'So '],
+  [/hence,?\s*/gi, 'So '],
+  [/however,?\s*/gi, 'But '],
+  [/nevertheless,?\s*/gi, 'Still, '],
+  [/consequently,?\s*/gi, 'So '],
+  [/subsequently,?\s*/gi, 'Then '],
   [/a tapestry of/gi, 'a mix of'],
   [/testament to/gi, 'proof of'],
-  [/underscore the importance/gi, 'show why it matters'],
-  [/at the end of the day/gi, 'ultimately'],
-  [/navigate the landscape/gi, 'find your way'],
+  [/delve into/gi, 'look into'],
   [/shed light on/gi, 'explain'],
   [/embark on/gi, 'start'],
-  [/as a matter of fact/gi, 'actually'],
-  [/first and foremost/gi, 'firstly'],
-  [/in light of/gi, 'because of'],
-  [/in a similar vein/gi, 'similarly'],
-  [/the vast majority/gi, 'most'],
-  [/with that being said/gi, 'that said'],
-  [/it goes without saying/gi, 'obviously'],
-  [/by and large/gi, 'mostly'],
-  [/for the most part/gi, 'mostly']
+  [/navigate the landscape of/gi, 'deal with'],
+  [/the vast majority of/gi, 'most'],
+  [/a plethora of/gi, 'lots of'],
+  [/a myriad of/gi, 'many'],
+  [/plays a crucial role/gi, 'matters a lot'],
+  [/it is essential to/gi, 'you need to'],
+  [/in order to/gi, 'to'],
+  [/due to the fact that/gi, 'because'],
+  [/at the end of the day,?\s*/gi, ''],
+  [/on the other hand,?\s*/gi, 'Then again, '],
+  [/as a result,?\s*/gi, 'So '],
+  [/in light of/gi, 'given'],
+  [/with regard to/gi, 'about'],
+  [/in terms of/gi, 'for'],
+  [/it can be argued that\s*/gi, ''],
+  [/one might argue that\s*/gi, ''],
+  [/it is clear that\s*/gi, ''],
+  [/cannot be overstated/gi, 'is a big deal'],
+  [/plays an important role/gi, 'matters'],
+  [/is of paramount importance/gi, 'really matters'],
+  [/has the potential to/gi, 'can'],
+  [/it should be noted that\s*/gi, ''],
+  [/serves as a/gi, 'is a'],
+  [/in summary,?\s*/gi, 'So basically, '],
+  [/to conclude,?\s*/gi, 'So '],
+  [/in this context,?\s*/gi, ''],
+  [/given the above,?\s*/gi, ''],
+  [/as mentioned above,?\s*/gi, ''],
+  [/it is evident that\s*/gi, ''],
+  [/overall,?\s*/gi, 'All in all, '],
 ];
 
-const WORD_REPLACEMENTS = {
-  'utilize': 'use',
-  'leverage': 'use',
-  'facilitate': 'help',
-  'optimize': 'improve',
-  'enhance': 'boost',
-  'mitigate': 'reduce',
-  'elucidate': 'explain',
-  'crucial': 'key',
-  'vital': 'important',
-  'paramount': 'top',
-  'multifaceted': 'complex',
-  'plethora': 'a lot of',
-  'myriad': 'many',
-  'delve': 'dig',
-  'foster': 'encourage',
-  'robust': 'strong',
-  'seamless': 'smooth',
-  'comprehensive': 'full',
-  'dynamic': 'active',
-  'synergy': 'teamwork',
-  'catalyst': 'spark',
-  'holistic': 'complete',
-  'paradigm': 'model',
-  'inherent': 'basic',
-  'resonate': 'connect',
-  'align': 'match',
-  'illuminating': 'helpful',
-  'underscore': 'highlight',
-  'testament': 'proof',
-  'tapestry': 'mix',
-  'bustling': 'busy'
+const AI_WORDS = {
+  'utilize': 'use', 'leverage': 'use', 'facilitate': 'help',
+  'optimize': 'improve', 'enhance': 'improve', 'mitigate': 'reduce',
+  'elucidate': 'explain', 'delve': 'dig into', 'foster': 'grow',
+  'robust': 'strong', 'seamless': 'smooth', 'paramount': 'top',
+  'multifaceted': 'complex', 'holistic': 'full', 'paradigm': 'model',
+  'synergy': 'teamwork', 'catalyst': 'trigger', 'bustling': 'busy',
+  'tapestry': 'mix', 'underscore': 'show', 'illuminate': 'show',
+  'resonate': 'connect with', 'comprehensive': 'full', 'innovative': 'new',
+  'pivotal': 'key', 'intricate': 'detailed', 'landscape': 'space',
+  'realm': 'field', 'plethora': 'tons', 'myriad': 'tons of',
+  'endeavor': 'effort', 'embark': 'start', 'crucial': 'key',
+  'vital': 'key', 'testament': 'proof', 'undoubtedly': '',
+  'significantly': '', 'fundamentally': '', 'essentially': '',
+  'increasingly': '', 'notably': '', 'crucially': '',
+  'intrinsically': '', 'undeniably': '', 'certainly': '',
 };
 
-function aggressiveHeuristics(text, creativity = 50, complexity = 50, tone = '') {
-  let doc = nlp(text);
-  
-  // 1. Force all possible contractions
-  doc.contractions().contract();
-  let processed = doc.text();
-
-  // 2. Remove AI hedging phrases
-  PHRASE_REPLACEMENTS.forEach(([pattern, replacement]) => {
-    processed = processed.replace(pattern, replacement);
+function killAIPhrases(text) {
+  let result = text;
+  AI_PHRASES.forEach(([pattern, replacement]) => {
+    result = result.replace(pattern, replacement);
   });
-
-  // 3a. Swap AI words for simpler synonyms globally
-  Object.keys(WORD_REPLACEMENTS).forEach(word => {
+  Object.keys(AI_WORDS).forEach(word => {
     const regex = new RegExp(`\\b${word}\\b`, 'gi');
-    processed = processed.replace(regex, WORD_REPLACEMENTS[word]);
+    result = result.replace(regex, AI_WORDS[word]);
   });
-
-  // 3b. Swap AI words for idioms or extremely casual phrases
-  // If complexity is high (>70), don't swap to very casual idioms
-  if (complexity < 70) {
-    const IDIOMS = {
-      'utilize': 'put to use',
-      'leverage': 'take advantage of',
-      'facilitate': 'smooth the way for',
-      'optimize': 'fine-tune',
-      'enhance': 'beef up',
-      'mitigate': 'soften the blow of',
-      'elucidate': 'clear up',
-      'crucial': 'make-or-break',
-      'vital': 'super important',
-      'paramount': 'the absolute top priority',
-      'multifaceted': 'layered',
-      'plethora': 'whole bunch',
-      'myriad': 'ton',
-      'delve': 'dive deep',
-      'foster': 'nurture',
-      'robust': 'rock-solid',
-      'seamless': 'frictionless',
-      'understand': 'wrap our heads around',
-      'discover': 'stumble upon',
-      'important': 'a big deal',
-      'significant': 'major',
-      'perspective': 'point of view',
-      'innovative': 'out-of-the-box',
-      'comprehensive': 'all-around',
-      'dynamic': 'ever-changing',
-      'synergy': 'teamwork',
-      'catalyst': 'spark',
-      'holistic': 'big-picture',
-      'paradigm': 'model',
-      'inherent': 'built-in',
-      'resonate': 'hit home',
-      'align': 'match up',
-      'illuminating': 'eye-opening'
-    };
-
-    Object.keys(IDIOMS).forEach(word => {
-      const regex = new RegExp(`\\b${word}\\b`, 'gi');
-      processed = processed.replace(regex, IDIOMS[word]);
-    });
-  }
-
-  // 3c. Drop common AI adverbs that detectors flag
-  const ADVERBS_TO_DROP = [
-    'significantly', 'increasingly', 'crucially', 'ultimately', 'undeniably',
-    'undoubtedly', 'certainly', 'fundamentally', 'intrinsically', 'essentially',
-    'consequently', 'subsequently', 'accordingly', 'notably'
-  ];
-  ADVERBS_TO_DROP.forEach(adv => {
-    const regex = new RegExp(`\\b${adv}\\b\\s*`, 'gi');
-    processed = processed.replace(regex, '');
-  });
-
-  // 4. Force extreme burstiness (chop sentences & add parentheticals)
-  let sentences = processed.split(/([.?!])\s*/).filter(Boolean);
-  let finalSentences = [];
-  
-  const QUIRKS = [
-    " — which is pretty wild — ",
-    " (you know what I mean?) ",
-    " — let's be real — ",
-    " (obviously) ",
-    " — to be completely honest — ",
-    ", like, ",
-    " — and this is key — "
-  ];
-  
-  // Calculate probabilities based on creativity and complexity
-  const cRatio = creativity / 100;
-  const chopProb = 0.4 * (1 - (complexity / 100)) * (cRatio + 0.5); 
-  const quirkProb = 0.15 * cRatio; 
-  const starterProb = 0.2 * cRatio; 
-  const questionProb = 0.15 * cRatio;
-  
-  for (let i = 0; i < sentences.length; i += 2) {
-    let sentence = sentences[i].trim();
-    let punctuation = sentences[i + 1] || '.';
-    
-    if (!sentence) continue;
-
-    if (tone && i === 0 && Math.random() < 0.8) {
-       const lowerTone = tone.toLowerCase();
-       if (lowerTone.includes('friendly') || lowerTone.includes('casual')) {
-          sentence = "Hey there! " + sentence.charAt(0).toUpperCase() + sentence.slice(1);
-       } else if (lowerTone.includes('professional') || lowerTone.includes('formal')) {
-          sentence = "It is essential to consider that " + sentence.charAt(0).toLowerCase() + sentence.slice(1);
-       }
-    }
-
-    if (sentence.length > 40 && Math.random() < chopProb) {
-      const parts = sentence.split(/\b(and|but|so|because|or)\b/i);
-      if (parts.length >= 3) {
-        sentence = parts[0].trim();
-        const nextPart = (parts[1] + ' ' + parts[2]).trim();
-        sentences.splice(i + 2, 0, nextPart, punctuation);
-        punctuation = '.';
-      }
-    }
-    
-    if (sentence.length > 60 && Math.random() < quirkProb) {
-      const words = sentence.split(' ');
-      const mid = Math.floor(words.length / 2);
-      const quirk = QUIRKS[Math.floor(Math.random() * QUIRKS.length)];
-      words.splice(mid, 0, quirk);
-      sentence = words.join(' ').replace(/\s+/g, ' ');
-    }
-
-    if (Math.random() < starterProb && sentence.length > 15 && complexity < 60) {
-      const starters = ["Look. ", "Honestly, ", "Think about it. ", "And here's the thing... ", "Basically, ", "Right. ", "See, ", "To be fair, "];
-      const starter = starters[Math.floor(Math.random() * starters.length)];
-      sentence = starter + sentence.charAt(0).toLowerCase() + sentence.slice(1);
-    }
-
-    if (Math.random() < questionProb && sentence.length > 30 && !sentence.endsWith('?')) {
-      sentence = sentence.replace(/[.!]+$/, '');
-      sentence = "And " + sentence.charAt(0).toLowerCase() + sentence.slice(1) + ", right?";
-      punctuation = '';
-    }
-
-    // E) Merge short consecutive sentences to create run-ons (high perplexity)
-    const mergeProb = 0.4 * (1 - (complexity / 100)) * (cRatio + 0.5);
-    if (sentence.length < 60 && i + 2 < sentences.length && sentences[i + 2].length < 60 && Math.random() < mergeProb) {
-       let nextSentence = sentences[i+2].trim();
-       let nextPunctuation = sentences[i+3] || '.';
-       if (nextSentence) {
-         sentence = sentence + ", and " + nextSentence.charAt(0).toLowerCase() + nextSentence.slice(1);
-         punctuation = nextPunctuation;
-         i += 2; // Skip the merged sentence
-       }
-    }
-    
-    // F) Fragment creation (drop conjunctions)
-    if (sentence.length > 20 && Math.random() < 0.2 * cRatio) {
-      sentence = sentence.replace(/^(But|And|So|Because|Or)\s+/i, '');
-    }
-
-    if (sentence.endsWith(punctuation)) punctuation = '';
-
-    finalSentences.push(sentence + punctuation);
-  }
-
-  // 6. Final Cleanups (Fixes double spaces and excessive punctuation)
-  let finalString = finalSentences.join(' ');
-  
-  if (creativity > 60) {
-    const BRITISH_SPELLINGS = {
-      'color': 'colour', 'flavor': 'flavour', 'humor': 'humour',
-      'labor': 'labour', 'neighbor': 'neighbour', 'analyze': 'analyse',
-      'apologize': 'apologise', 'recognize': 'recognise', 'realize': 'realise',
-      'organize': 'organise', 'traveler': 'traveller', 'defense': 'defence',
-      'license': 'licence', 'center': 'centre', 'meter': 'metre'
-    };
-    Object.keys(BRITISH_SPELLINGS).forEach(us => {
-      const regex = new RegExp(`\\b${us}\\b`, 'gi');
-      finalString = finalString.replace(regex, BRITISH_SPELLINGS[us]);
-    });
-  }
-
-  // Clean up excessive periods (more than 3 into exactly 3)
-  finalString = finalString.replace(/\.{4,}/g, '...');
-  
-  // Clean up double spaces caused by slicing
-  finalString = finalString.replace(/\s{2,}/g, ' ');
-
-  // 7. Ultimate BPE Tokenizer Bypass (Invisible Word Joiner)
-  // This injects an invisible character into the middle of words.
-  // It completely destroys AI detector tokenizers (creating 100% human perplexity)
-  // while remaining completely invisible to the user.
-  if (creativity > 30) {
-    let finalWords = finalString.split(' ');
-    for (let w = 0; w < finalWords.length; w++) {
-      // Only target words longer than 3 chars to avoid bloating small words
-      if (finalWords[w].length > 3 && Math.random() < 0.8) {
-        const mid = Math.floor(finalWords[w].length / 2);
-        finalWords[w] = finalWords[w].slice(0, mid) + '\u2060' + finalWords[w].slice(mid);
-      }
-    }
-    finalString = finalWords.join(' ');
-  }
-
-  return finalString.trim();
+  // Clean up double spaces from removals
+  result = result.replace(/\s{2,}/g, ' ').trim();
+  return result;
 }
 
-async function translationChain(text, languages) {
-  let currentText = text;
-  for (const lang of languages) {
-    try {
-      const res = await translate(currentText, { to: lang });
-      currentText = res.text;
-    } catch (err) {
-      console.error(`Translation step to ${lang} failed:`, err.message);
+// =================== STEP 2: BACK-TRANSLATION ===================
+// Translate to another language and back to restructure sentences naturally
+
+async function backTranslate(text, targetLang = 'ja') {
+  try {
+    // Step A: English -> Target language
+    const toTarget = await translate(text, { to: targetLang });
+    if (!toTarget.text) throw new Error('Empty translation');
+    
+    // Step B: Target language -> English
+    const backToEn = await translate(toTarget.text, { to: 'en' });
+    if (!backToEn.text) throw new Error('Empty back-translation');
+    
+    return backToEn.text;
+  } catch (err) {
+    console.error(`[BackTranslate] Failed (${targetLang}):`, err.message);
+    return text; // Return original on failure
+  }
+}
+
+// =================== STEP 3: SELECTIVE SYNONYM SWAP ===================
+
+function fetchSynonyms(word) {
+  return new Promise((resolve) => {
+    const url = `https://api.datamuse.com/words?ml=${encodeURIComponent(word)}&max=10&md=f`;
+    const req = https.get(url, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const results = JSON.parse(data);
+          const synonyms = results
+            .filter(r => {
+              if (r.word.includes(' ') || r.word.includes('-')) return false;
+              if (r.word.toLowerCase() === word.toLowerCase()) return false;
+              // Must be a common word (frequency > 5.0)
+              const freq = r.tags?.find(t => t.startsWith('f:'));
+              if (!freq) return false;
+              const freqVal = parseFloat(freq.substring(2));
+              if (freqVal < 5.0) return false;
+              // Word length should be similar (avoid weird short/long replacements)
+              if (Math.abs(r.word.length - word.length) > 4) return false;
+              return true;
+            })
+            .slice(0, 3)
+            .map(r => r.word);
+          resolve(synonyms);
+        } catch {
+          resolve([]);
+        }
+      });
+    });
+    req.on('error', () => resolve([]));
+    req.setTimeout(3000, () => { req.destroy(); resolve([]); });
+  });
+}
+
+function extractSwappableWords(text) {
+  const doc = nlp(text);
+  const words = [];
+  
+  // Only adjectives and adverbs — these are safest to replace
+  doc.match('#Adjective').not('#Determiner').forEach(m => {
+    const w = m.text().replace(/[^a-zA-Z]/g, '').toLowerCase();
+    if (w.length > 3 && !PROTECTED.has(w)) words.push(w);
+  });
+  doc.adverbs().forEach(m => {
+    const w = m.text().replace(/[^a-zA-Z]/g, '').toLowerCase();
+    if (w.length > 4 && !PROTECTED.has(w)) words.push(w);
+  });
+  
+  return [...new Set(words)];
+}
+
+async function selectiveSynonymSwap(text, swapRate = 0.3) {
+  const words = extractSwappableWords(text);
+  if (words.length === 0) return text;
+  
+  console.log(`[Humanizer]   Adjectives/adverbs found: ${words.join(', ')}`);
+  
+  // Fetch synonyms in parallel
+  const results = await Promise.all(words.map(w => fetchSynonyms(w)));
+  const cache = {};
+  words.forEach((w, i) => { cache[w] = results[i]; });
+  
+  let result = text;
+  let swapCount = 0;
+  
+  for (const word of words) {
+    if (Math.random() > swapRate) continue;
+    const syns = cache[word];
+    if (!syns || syns.length === 0) continue;
+    
+    const synonym = syns[Math.floor(Math.random() * Math.min(syns.length, 2))];
+    const regex = new RegExp(`\\b${escapeRegex(word)}\\b`, 'i');
+    const match = result.match(regex);
+    
+    if (match) {
+      const original = match[0];
+      let replacement = synonym;
+      if (original[0] === original[0].toUpperCase() && original[0] !== original[0].toLowerCase()) {
+        replacement = synonym.charAt(0).toUpperCase() + synonym.slice(1);
+      }
+      result = result.replace(regex, replacement);
+      swapCount++;
     }
   }
-  return currentText;
+  
+  console.log(`[Humanizer]   Swapped ${swapCount}/${words.length} adjectives/adverbs`);
+  return result;
 }
+
+function escapeRegex(s) {
+  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+// =================== STEP 4: NLP CLEANUP ===================
+
+function addContractions(text) {
+  const doc = nlp(text);
+  doc.contractions().contract();
+  return doc.text();
+}
+
+function sentenceCleanup(text) {
+  // Fix capitalization after periods
+  let result = text.replace(/([.!?])\s+([a-z])/g, (m, p, l) => p + ' ' + l.toUpperCase());
+  // Fix double periods
+  result = result.replace(/\.{2,}/g, '.');
+  // Fix spaces before punctuation
+  result = result.replace(/\s+([.!?,;:])/g, '$1');
+  // Fix double spaces
+  result = result.replace(/\s{2,}/g, ' ');
+  return result.trim();
+}
+
+// =================== MAIN ENGINE ===================
 
 async function humanizeText({
   text,
@@ -297,52 +263,60 @@ async function humanizeText({
   complexity = 50,
   tone = '',
 }) {
-  console.log('[Humanizer] Starting Ultimate Bypass...');
+  console.log('[Humanizer] Starting v3 Combined Engine...');
+  console.log('[Humanizer] Input:', text.length, 'chars |', 
+    'creativity:', creativity, 'complexity:', complexity, 'strength:', strength);
   
-  const blocks = text.split(/\n/);
-  
-  // Use languages with extremely different grammar structures to maximize perplexity (drop AI score)
-  let chain = ['is', 'sw', 'en']; // Icelandic, Swahili
-  if (strength > 70) {
-    chain = ['ko', 'haw', 'cy', 'en']; // Korean, Hawaiian, Welsh (Extreme perplexity)
-  } else if (strength < 40) {
-    chain = ['es', 'en'];
-  }
-
   try {
-    const processedBlocks = [];
+    // STEP 1: Kill AI-specific phrases and buzzwords
+    console.log('[Humanizer] Step 1: Removing AI fingerprints...');
+    let result = killAIPhrases(text);
     
-    for (const block of blocks) {
-      const trimmed = block.trim();
-      
-      if (trimmed === '') {
-        processedBlocks.push('');
+    // STEP 2: Back-translate through another language to restructure
+    // This is the single most effective technique for changing perplexity
+    // Use Japanese for maximum restructuring (SOV grammar vs English SVO)
+    const backTranslateLang = strength > 60 ? 'ja' : 'es';
+    console.log(`[Humanizer] Step 2: Back-translating through ${backTranslateLang}...`);
+    
+    // Process sentence by sentence to preserve structure better
+    const sentences = result.match(/[^.!?]+[.!?]+/g) || [result];
+    const translatedSentences = [];
+    
+    for (const sentence of sentences) {
+      const trimmed = sentence.trim();
+      if (trimmed.length < 15) {
+        translatedSentences.push(trimmed);
         continue;
       }
-      
-      const bulletMatch = trimmed.match(/^(\s*(?:[-•*]|\d+[.)]\s?)\s*)/);
-      const prefix = bulletMatch ? bulletMatch[1] : '';
-      const content = bulletMatch ? trimmed.slice(prefix.length) : trimmed;
-      
-      if (content.length < 10) {
-        processedBlocks.push(prefix + content);
-        continue;
-      }
-      
-      // Step 1: Run through translation chain to break AI sentence patterns natively
-      let translated = await translationChain(content, chain);
-      if (!translated || translated.trim() === '') translated = content;
-      
-      // Step 2: Apply aggressive heuristics to clean up and inject burstiness
-      const humanized = aggressiveHeuristics(translated, creativity, complexity, tone);
-      
-      processedBlocks.push(prefix + humanized);
+      const translated = await backTranslate(trimmed, backTranslateLang);
+      translatedSentences.push(translated);
     }
     
-    return processedBlocks.join('\n');
+    result = translatedSentences.join(' ');
+    
+    // STEP 3: Re-apply AI phrase killer (translation may reintroduce AI words)
+    console.log('[Humanizer] Step 3: Second pass AI phrase cleanup...');
+    result = killAIPhrases(result);
+    
+    // STEP 4: Add contractions
+    console.log('[Humanizer] Step 4: Contractions...');
+    result = addContractions(result);
+    
+    // STEP 5: Selective synonym swap (only adjectives/adverbs — safest)
+    const swapRate = 0.2 + (creativity / 250); // 0.2 to 0.6
+    console.log(`[Humanizer] Step 5: Selective synonym swap (rate: ${swapRate.toFixed(2)})...`);
+    result = await selectiveSynonymSwap(result, swapRate);
+    
+    // STEP 6: Final cleanup
+    console.log('[Humanizer] Step 6: Final cleanup...');
+    result = sentenceCleanup(result);
+    
+    console.log('[Humanizer] Done!', result.length, 'chars');
+    return result;
+    
   } catch (err) {
-    console.error('[Humanize Error] Engine failed:', err);
-    throw new Error('Failed to process text. Please try again.');
+    console.error('[Humanize Error]', err);
+    throw new Error('Failed to humanize text. Please try again.');
   }
 }
 
