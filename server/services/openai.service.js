@@ -3,33 +3,72 @@ const https = require('https');
 const { translate } = require('@vitalets/google-translate-api');
 
 // ============================================================
-// HUMANIZER ENGINE v3 — COMBINED APPROACH (No API Key)
-// Translation back-translate + Selective synonyms + NLP cleanup
+// HUMANIZER ENGINE v4 — MULTI-HOP TRANSLATION
+// English → Malayalam → English → Hindi → English
+// All processing is invisible — user only sees final English output
 // ============================================================
 
-// Words to never touch during synonym replacement
-const PROTECTED = new Set([
-  'ai', 'artificial', 'intelligence', 'machine', 'learning', 'data',
-  'algorithm', 'algorithms', 'technology', 'system', 'systems',
-  'computer', 'digital', 'internet', 'software', 'hardware',
-  'i', 'you', 'we', 'they', 'he', 'she', 'it', 'the', 'a', 'an',
-  'is', 'are', 'was', 'were', 'be', 'been', 'being',
-  'have', 'has', 'had', 'do', 'does', 'did',
-  'will', 'would', 'could', 'should', 'may', 'might', 'can',
-  'not', 'no', 'yes', 'and', 'or', 'but', 'if', 'so', 'yet',
-  'this', 'that', 'these', 'those', 'my', 'your', 'our', 'their',
-  'what', 'which', 'who', 'whom', 'where', 'when', 'why', 'how',
-  'all', 'each', 'every', 'both', 'few', 'more', 'most', 'some',
-  'any', 'many', 'much', 'own', 'other', 'such', 'than', 'too',
-  'very', 'just', 'also', 'only', 'still', 'even', 'then', 'now',
-  'work', 'make', 'take', 'give', 'get', 'go', 'come', 'see',
-  'know', 'think', 'say', 'tell', 'find', 'want', 'need', 'use',
-  'live', 'way', 'world', 'people', 'time', 'year', 'day', 'thing',
-  'part', 'place', 'case', 'point', 'fact', 'hand', 'life', 'kind',
-]);
+// --- Translation with fallback (Google Translate → MyMemory API) ---
+function sleep(ms) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
 
-// =================== STEP 1: AI PHRASE KILLER ===================
+// MyMemory free translation API (no key needed)
+function myMemoryTranslate(text, from, to) {
+  return new Promise((resolve) => {
+    // MyMemory uses different lang codes - ml for Malayalam, hi for Hindi
+    const url = `https://api.mymemory.translated.net/get?q=${encodeURIComponent(text.substring(0, 500))}&langpair=${from}|${to}`;
+    https.get(url, (res) => {
+      let data = '';
+      res.on('data', chunk => data += chunk);
+      res.on('end', () => {
+        try {
+          const result = JSON.parse(data);
+          if (result.responseStatus === 200 && result.responseData?.translatedText) {
+            const translated = result.responseData.translatedText;
+            // MyMemory sometimes returns the input text unchanged
+            if (translated.toUpperCase() === text.substring(0, 500).toUpperCase()) {
+              resolve(null);
+            } else {
+              resolve(translated);
+            }
+          } else {
+            console.log(`[MyMemory] Status: ${result.responseStatus}, msg: ${result.responseData?.translatedText?.substring(0, 50)}`);
+            resolve(null);
+          }
+        } catch (e) {
+          console.log('[MyMemory] Parse error:', e.message);
+          resolve(null);
+        }
+      });
+    }).on('error', (e) => {
+      console.log('[MyMemory] Network error:', e.message);
+      resolve(null);
+    });
+  });
+}
 
+async function translateText(text, targetLang, sourceLang = 'en') {
+  // Try Google Translate first
+  try {
+    const res = await translate(text, { to: targetLang, from: sourceLang });
+    if (res.text) return res.text;
+  } catch (err) {
+    console.log(`[Translate] Google failed (${targetLang}), trying MyMemory...`);
+  }
+  
+  // Fallback to MyMemory API
+  try {
+    const result = await myMemoryTranslate(text, sourceLang, targetLang);
+    if (result) return result;
+  } catch (err) {
+    console.log(`[Translate] MyMemory also failed (${targetLang})`);
+  }
+  
+  return text; // Return original if both fail
+}
+
+// --- AI phrase cleanup (applied after translation) ---
 const AI_PHRASES = [
   [/it is important to note that\s*/gi, ''],
   [/it is worth noting that\s*/gi, ''],
@@ -39,8 +78,8 @@ const AI_PHRASES = [
   [/furthermore,?\s*/gi, 'Also, '],
   [/moreover,?\s*/gi, 'Plus, '],
   [/additionally,?\s*/gi, 'And '],
-  [/in conclusion,?\s*/gi, 'To wrap it up, '],
-  [/to summarize,?\s*/gi, 'Basically, '],
+  [/in conclusion,?\s*/gi, ''],
+  [/to summarize,?\s*/gi, ''],
   [/therefore,?\s*/gi, 'So '],
   [/thus,?\s*/gi, 'So '],
   [/hence,?\s*/gi, 'So '],
@@ -48,12 +87,9 @@ const AI_PHRASES = [
   [/nevertheless,?\s*/gi, 'Still, '],
   [/consequently,?\s*/gi, 'So '],
   [/subsequently,?\s*/gi, 'Then '],
-  [/a tapestry of/gi, 'a mix of'],
-  [/testament to/gi, 'proof of'],
   [/delve into/gi, 'look into'],
   [/shed light on/gi, 'explain'],
   [/embark on/gi, 'start'],
-  [/navigate the landscape of/gi, 'deal with'],
   [/the vast majority of/gi, 'most'],
   [/a plethora of/gi, 'lots of'],
   [/a myriad of/gi, 'many'],
@@ -68,21 +104,22 @@ const AI_PHRASES = [
   [/with regard to/gi, 'about'],
   [/in terms of/gi, 'for'],
   [/it can be argued that\s*/gi, ''],
-  [/one might argue that\s*/gi, ''],
   [/it is clear that\s*/gi, ''],
-  [/cannot be overstated/gi, 'is a big deal'],
-  [/plays an important role/gi, 'matters'],
-  [/is of paramount importance/gi, 'really matters'],
-  [/has the potential to/gi, 'can'],
-  [/it should be noted that\s*/gi, ''],
-  [/serves as a/gi, 'is a'],
-  [/in summary,?\s*/gi, 'So basically, '],
-  [/to conclude,?\s*/gi, 'So '],
-  [/in this context,?\s*/gi, ''],
-  [/given the above,?\s*/gi, ''],
-  [/as mentioned above,?\s*/gi, ''],
+  [/in summary,?\s*/gi, ''],
+  [/to conclude,?\s*/gi, ''],
+  [/overall,?\s*/gi, ''],
   [/it is evident that\s*/gi, ''],
-  [/overall,?\s*/gi, 'All in all, '],
+  [/has the potential to/gi, 'can'],
+  [/serves as a/gi, 'is a'],
+  [/cannot be overstated/gi, 'is a big deal'],
+  [/undoubtedly,?\s*/gi, ''],
+  [/undeniably,?\s*/gi, ''],
+  [/significantly,?\s*/gi, ''],
+  [/fundamentally,?\s*/gi, ''],
+  [/essentially,?\s*/gi, ''],
+  [/increasingly,?\s*/gi, ''],
+  [/notably,?\s*/gi, ''],
+  [/crucially,?\s*/gi, ''],
 ];
 
 const AI_WORDS = {
@@ -94,16 +131,13 @@ const AI_WORDS = {
   'synergy': 'teamwork', 'catalyst': 'trigger', 'bustling': 'busy',
   'tapestry': 'mix', 'underscore': 'show', 'illuminate': 'show',
   'resonate': 'connect with', 'comprehensive': 'full', 'innovative': 'new',
-  'pivotal': 'key', 'intricate': 'detailed', 'landscape': 'space',
+  'pivotal': 'key', 'intricate': 'detailed',
   'realm': 'field', 'plethora': 'tons', 'myriad': 'tons of',
   'endeavor': 'effort', 'embark': 'start', 'crucial': 'key',
-  'vital': 'key', 'testament': 'proof', 'undoubtedly': '',
-  'significantly': '', 'fundamentally': '', 'essentially': '',
-  'increasingly': '', 'notably': '', 'crucially': '',
-  'intrinsically': '', 'undeniably': '', 'certainly': '',
+  'vital': 'key', 'testament': 'proof',
 };
 
-function killAIPhrases(text) {
+function cleanAIPhrases(text) {
   let result = text;
   AI_PHRASES.forEach(([pattern, replacement]) => {
     result = result.replace(pattern, replacement);
@@ -112,144 +146,33 @@ function killAIPhrases(text) {
     const regex = new RegExp(`\\b${word}\\b`, 'gi');
     result = result.replace(regex, AI_WORDS[word]);
   });
-  // Clean up double spaces from removals
-  result = result.replace(/\s{2,}/g, ' ').trim();
-  return result;
+  return result.replace(/\s{2,}/g, ' ').trim();
 }
 
-// =================== STEP 2: BACK-TRANSLATION ===================
-// Translate to another language and back to restructure sentences naturally
-
-async function backTranslate(text, targetLang = 'ja') {
-  try {
-    // Step A: English -> Target language
-    const toTarget = await translate(text, { to: targetLang });
-    if (!toTarget.text) throw new Error('Empty translation');
-    
-    // Step B: Target language -> English
-    const backToEn = await translate(toTarget.text, { to: 'en' });
-    if (!backToEn.text) throw new Error('Empty back-translation');
-    
-    return backToEn.text;
-  } catch (err) {
-    console.error(`[BackTranslate] Failed (${targetLang}):`, err.message);
-    return text; // Return original on failure
-  }
-}
-
-// =================== STEP 3: SELECTIVE SYNONYM SWAP ===================
-
-function fetchSynonyms(word) {
-  return new Promise((resolve) => {
-    const url = `https://api.datamuse.com/words?ml=${encodeURIComponent(word)}&max=10&md=f`;
-    const req = https.get(url, (res) => {
-      let data = '';
-      res.on('data', chunk => data += chunk);
-      res.on('end', () => {
-        try {
-          const results = JSON.parse(data);
-          const synonyms = results
-            .filter(r => {
-              if (r.word.includes(' ') || r.word.includes('-')) return false;
-              if (r.word.toLowerCase() === word.toLowerCase()) return false;
-              // Must be a common word (frequency > 5.0)
-              const freq = r.tags?.find(t => t.startsWith('f:'));
-              if (!freq) return false;
-              const freqVal = parseFloat(freq.substring(2));
-              if (freqVal < 5.0) return false;
-              // Word length should be similar (avoid weird short/long replacements)
-              if (Math.abs(r.word.length - word.length) > 4) return false;
-              return true;
-            })
-            .slice(0, 3)
-            .map(r => r.word);
-          resolve(synonyms);
-        } catch {
-          resolve([]);
-        }
-      });
-    });
-    req.on('error', () => resolve([]));
-    req.setTimeout(3000, () => { req.destroy(); resolve([]); });
-  });
-}
-
-function extractSwappableWords(text) {
-  const doc = nlp(text);
-  const words = [];
-  
-  // Only adjectives and adverbs — these are safest to replace
-  doc.match('#Adjective').not('#Determiner').forEach(m => {
-    const w = m.text().replace(/[^a-zA-Z]/g, '').toLowerCase();
-    if (w.length > 3 && !PROTECTED.has(w)) words.push(w);
-  });
-  doc.adverbs().forEach(m => {
-    const w = m.text().replace(/[^a-zA-Z]/g, '').toLowerCase();
-    if (w.length > 4 && !PROTECTED.has(w)) words.push(w);
-  });
-  
-  return [...new Set(words)];
-}
-
-async function selectiveSynonymSwap(text, swapRate = 0.3) {
-  const words = extractSwappableWords(text);
-  if (words.length === 0) return text;
-  
-  console.log(`[Humanizer]   Adjectives/adverbs found: ${words.join(', ')}`);
-  
-  // Fetch synonyms in parallel
-  const results = await Promise.all(words.map(w => fetchSynonyms(w)));
-  const cache = {};
-  words.forEach((w, i) => { cache[w] = results[i]; });
-  
-  let result = text;
-  let swapCount = 0;
-  
-  for (const word of words) {
-    if (Math.random() > swapRate) continue;
-    const syns = cache[word];
-    if (!syns || syns.length === 0) continue;
-    
-    const synonym = syns[Math.floor(Math.random() * Math.min(syns.length, 2))];
-    const regex = new RegExp(`\\b${escapeRegex(word)}\\b`, 'i');
-    const match = result.match(regex);
-    
-    if (match) {
-      const original = match[0];
-      let replacement = synonym;
-      if (original[0] === original[0].toUpperCase() && original[0] !== original[0].toLowerCase()) {
-        replacement = synonym.charAt(0).toUpperCase() + synonym.slice(1);
-      }
-      result = result.replace(regex, replacement);
-      swapCount++;
-    }
-  }
-  
-  console.log(`[Humanizer]   Swapped ${swapCount}/${words.length} adjectives/adverbs`);
-  return result;
-}
-
-function escapeRegex(s) {
-  return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-}
-
-// =================== STEP 4: NLP CLEANUP ===================
-
+// --- Add natural contractions ---
 function addContractions(text) {
-  const doc = nlp(text);
-  doc.contractions().contract();
-  return doc.text();
+  try {
+    const doc = nlp(text);
+    doc.contractions().contract();
+    return doc.text();
+  } catch {
+    return text;
+  }
 }
 
-function sentenceCleanup(text) {
+// --- Final text cleanup ---
+function finalCleanup(text) {
+  let result = text;
   // Fix capitalization after periods
-  let result = text.replace(/([.!?])\s+([a-z])/g, (m, p, l) => p + ' ' + l.toUpperCase());
+  result = result.replace(/([.!?])\s+([a-z])/g, (m, p, l) => p + ' ' + l.toUpperCase());
   // Fix double periods
   result = result.replace(/\.{2,}/g, '.');
   // Fix spaces before punctuation
   result = result.replace(/\s+([.!?,;:])/g, '$1');
   // Fix double spaces
   result = result.replace(/\s{2,}/g, ' ');
+  // Ensure first letter is capitalized
+  result = result.charAt(0).toUpperCase() + result.slice(1);
   return result.trim();
 }
 
@@ -263,56 +186,73 @@ async function humanizeText({
   complexity = 50,
   tone = '',
 }) {
-  console.log('[Humanizer] Starting v3 Combined Engine...');
-  console.log('[Humanizer] Input:', text.length, 'chars |', 
-    'creativity:', creativity, 'complexity:', complexity, 'strength:', strength);
+  console.log('[Humanizer] Starting v4 Multi-Hop Translation Engine...');
+  console.log('[Humanizer] Input:', text.length, 'chars');
   
   try {
-    // STEP 1: Kill AI-specific phrases and buzzwords
-    console.log('[Humanizer] Step 1: Removing AI fingerprints...');
-    let result = killAIPhrases(text);
+    // Split into paragraphs to preserve structure
+    const paragraphs = text.split(/\n+/);
+    const processedParagraphs = [];
     
-    // STEP 2: Back-translate through another language to restructure
-    // This is the single most effective technique for changing perplexity
-    // Use Japanese for maximum restructuring (SOV grammar vs English SVO)
-    const backTranslateLang = strength > 60 ? 'ja' : 'es';
-    console.log(`[Humanizer] Step 2: Back-translating through ${backTranslateLang}...`);
-    
-    // Process sentence by sentence to preserve structure better
-    const sentences = result.match(/[^.!?]+[.!?]+/g) || [result];
-    const translatedSentences = [];
-    
-    for (const sentence of sentences) {
-      const trimmed = sentence.trim();
-      if (trimmed.length < 15) {
-        translatedSentences.push(trimmed);
+    for (const paragraph of paragraphs) {
+      const trimmed = paragraph.trim();
+      if (!trimmed) {
+        processedParagraphs.push('');
         continue;
       }
-      const translated = await backTranslate(trimmed, backTranslateLang);
-      translatedSentences.push(translated);
+      
+      if (trimmed.length < 10) {
+        processedParagraphs.push(trimmed);
+        continue;
+      }
+      
+      // ========== STEP 1: Remove AI phrases first ==========
+      console.log('[Humanizer] Step 1: Cleaning AI phrases...');
+      let result = cleanAIPhrases(trimmed);
+      
+      // ========== STEP 2: English → Malayalam → English ==========
+      // Malayalam (Dravidian language) has SOV word order, 
+      // agglutinative morphology — completely different from English
+      console.log('[Humanizer] Step 2: English → Malayalam → English...');
+      let malayalamText = await translateText(result, 'ml', 'en'); // English to Malayalam
+      await sleep(500); // Small delay to avoid rate limiting
+      let backToEnglish1 = await translateText(malayalamText, 'en', 'ml'); // Malayalam to English
+      await sleep(500);
+      
+      if (backToEnglish1 && backToEnglish1.trim().length > 0) {
+        result = backToEnglish1;
+      }
+      
+      // ========== STEP 3: English → Hindi → English ==========
+      // Hindi (Indo-Aryan) also has SOV order but different morphology
+      // This second hop further breaks AI patterns
+      console.log('[Humanizer] Step 3: English → Hindi → English...');
+      let hindiText = await translateText(result, 'hi', 'en'); // English to Hindi
+      await sleep(500);
+      let backToEnglish2 = await translateText(hindiText, 'en', 'hi'); // Hindi to English
+      
+      if (backToEnglish2 && backToEnglish2.trim().length > 0) {
+        result = backToEnglish2;
+      }
+      
+      // ========== STEP 4: Clean AI phrases again ==========
+      // Translation might reintroduce formal/AI-like phrasing
+      console.log('[Humanizer] Step 4: Second pass AI cleanup...');
+      result = cleanAIPhrases(result);
+      
+      // ========== STEP 5: Add natural contractions ==========
+      console.log('[Humanizer] Step 5: Adding contractions...');
+      result = addContractions(result);
+      
+      // ========== STEP 6: Final cleanup ==========
+      result = finalCleanup(result);
+      
+      processedParagraphs.push(result);
     }
     
-    result = translatedSentences.join(' ');
-    
-    // STEP 3: Re-apply AI phrase killer (translation may reintroduce AI words)
-    console.log('[Humanizer] Step 3: Second pass AI phrase cleanup...');
-    result = killAIPhrases(result);
-    
-    // STEP 4: Add contractions
-    console.log('[Humanizer] Step 4: Contractions...');
-    result = addContractions(result);
-    
-    // STEP 5: Selective synonym swap (only adjectives/adverbs — safest)
-    const swapRate = 0.2 + (creativity / 250); // 0.2 to 0.6
-    console.log(`[Humanizer] Step 5: Selective synonym swap (rate: ${swapRate.toFixed(2)})...`);
-    result = await selectiveSynonymSwap(result, swapRate);
-    
-    // STEP 6: Final cleanup
-    console.log('[Humanizer] Step 6: Final cleanup...');
-    result = sentenceCleanup(result);
-    
-    console.log('[Humanizer] Done!', result.length, 'chars');
-    return result;
+    const finalResult = processedParagraphs.join('\n\n');
+    console.log('[Humanizer] Done!', finalResult.length, 'chars');
+    return finalResult;
     
   } catch (err) {
     console.error('[Humanize Error]', err);
