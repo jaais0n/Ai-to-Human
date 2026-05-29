@@ -18,6 +18,8 @@
     "g4f": "^1.4.6",
     "google-translate-api-x": "^10.7.3",
     "multer": "1.4.4",
-    "openai": "^4.0.0"
+    "natural": "^8.1.1",
+    "openai": "^4.0.0",
+    "wordnet-db": "^3.1.14"
   }
 }
